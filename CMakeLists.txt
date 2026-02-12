@@ -25,7 +25,7 @@ add_library(crypto
 
 target_include_directories(crypto PUBLIC src)
 
-add_executable(rgu-labs-term4-crypto main.cpp)
+add_executable(rgu-labs-term4-crypto src/main.cpp)
 
 target_link_libraries(rgu-labs-term4-crypto PRIVATE crypto)
 
