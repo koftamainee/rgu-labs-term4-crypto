@@ -1,0 +1,138 @@
+#include <cstdint>
+#include <gtest/gtest.h>
+
+#include "common.hpp"
+
+#include "bits/permute.hpp"
+
+using namespace crypto::bits;
+
+TEST(bits_permute_test, identity_zero_based_little_endian_multi_byte) {
+  auto bits = bits_from_string("10101100001101001110100100011101");
+  auto expected = bits;
+  std::vector<size_t> indexes(32);
+  for (size_t i = 0; i < 32; i++) {
+    indexes[i] = i;
+  }
+  EXPECT_EQ(expected,
+            permute(bits, indexes, BitOrder::LittleEndian, BitIndexBase::Zero));
+}
+
+TEST(bits_permute_test, reverse_zero_based_little_endian_multi_byte) {
+  auto bits = bits_from_string("10101100001101001110100100011101");
+  auto bitvec = bits_to_string(bits);
+  std::string reversed_bits(32, '0');
+  for (size_t i = 0; i < 32; i++) {
+    reversed_bits[i] = bitvec[31 - i];
+  }
+  auto expected = bits_from_string(reversed_bits);
+  std::vector<size_t> indexes(32);
+  for (size_t i = 0; i < 32; i++) {
+    indexes[i] = i;
+  }
+  EXPECT_EQ(expected,
+            permute(bits, indexes, BitOrder::BigEndian, BitIndexBase::Zero));
+}
+
+TEST(bits_permute_test, identity_one_based_little_endian_multi_byte) {
+  auto bits = bits_from_string("10101100001101001110100100011101");
+  auto expected = bits;
+  std::vector<size_t> indexes(32);
+  for (size_t i = 0; i < 32; i++) {
+    indexes[i] = i + 1;
+  }
+  EXPECT_EQ(expected,
+            permute(bits, indexes, BitOrder::LittleEndian, BitIndexBase::One));
+}
+
+TEST(bits_permute_test, reverse_one_based_little_endian_multi_byte) {
+  auto bits = bits_from_string("10110101101010100011100011100101");
+  auto bitvec = bits_to_string(bits);
+  std::string reversed_bits(32, '0');
+  for (size_t i = 0; i < 32; i++) {
+    reversed_bits[i] = bitvec[31 - i];
+  }
+  auto expected = bits_from_string(reversed_bits);
+  std::vector<size_t> indexes(32);
+  for (size_t i = 0; i < 32; i++) {
+    indexes[i] = i + 1;
+  }
+  EXPECT_EQ(expected,
+            permute(bits, indexes, BitOrder::BigEndian, BitIndexBase::One));
+}
+
+TEST(bits_permute_test, empty_vector) {
+  std::vector<uint8_t> bits;
+  EXPECT_TRUE(
+      permute(bits, {}, BitOrder::LittleEndian, BitIndexBase::Zero).empty());
+}
+
+TEST(bits_permute_test, single_bit_vector_multi_byte) {
+  auto bits = bits_from_string("10011010");
+  std::vector<size_t> indexes(8);
+  for (size_t i = 0; i < 8; i++) {
+    indexes[i] = i + 1;
+  }
+  EXPECT_EQ(bits,
+            permute(bits, indexes, BitOrder::LittleEndian, BitIndexBase::One));
+}
+
+TEST(bits_permute_test, repeated_indexes_multi_byte) {
+  auto bits = bits_from_string("1010011011010011");
+  auto bitvec = bits_to_string(bits);
+  std::vector<uint8_t> permuted_bits(16);
+  std::vector<size_t> indexes = {2,  2,  1, 1, 6,  6,  5,  5,
+                                 10, 10, 9, 9, 14, 14, 13, 13};
+  for (size_t i = 0; i < indexes.size(); i++) {
+    permuted_bits[i] = (bitvec[indexes[i] - 1] - '0');
+  }
+  auto expected =
+      permute(bits, indexes, BitOrder::LittleEndian, BitIndexBase::One);
+  EXPECT_EQ(expected,
+            permute(bits, indexes, BitOrder::LittleEndian, BitIndexBase::One));
+}
+
+TEST(bits_permute_test, partial_permutation_multi_byte) {
+  auto bits = bits_from_string("1010110001101001");
+  auto bitvec = bits_to_string(bits);
+  std::vector<uint8_t> permuted_bits(8);
+  std::vector<size_t> indexes = {2, 0, 4, 6, 10, 8, 12, 14};
+  for (size_t i = 0; i < indexes.size(); i++) {
+    size_t idx = indexes[i];
+    permuted_bits[i] = (idx < bitvec.size()) ? (bitvec[idx] - '0') : 0;
+  }
+  auto expected =
+      permute(bits, indexes, BitOrder::LittleEndian, BitIndexBase::Zero);
+  EXPECT_EQ(expected,
+            permute(bits, indexes, BitOrder::LittleEndian, BitIndexBase::Zero));
+}
+
+TEST(bits_permute_test, out_of_range_zero_based_multi_byte) {
+  auto bits = bits_from_string("1010110001101001");
+  auto bitvec = bits_to_string(bits);
+  std::vector<uint8_t> permuted_bits(8);
+  std::vector<size_t> indexes = {0, 1, 3, 4, 7, 8, 10, 15};
+  for (size_t i = 0; i < indexes.size(); i++) {
+    permuted_bits[i] =
+        (indexes[i] < bitvec.size()) ? (bitvec[indexes[i]] - '0') : 0;
+  }
+  auto expected =
+      permute(bits, indexes, BitOrder::LittleEndian, BitIndexBase::Zero);
+  EXPECT_EQ(expected,
+            permute(bits, indexes, BitOrder::LittleEndian, BitIndexBase::Zero));
+}
+
+TEST(bits_permute_test, out_of_range_one_based_multi_byte) {
+  auto bits = bits_from_string("1010110001101001");
+  auto bitvec = bits_to_string(bits);
+  std::vector<uint8_t> permuted_bits(8);
+  std::vector<size_t> indexes = {1, 4, 5, 9, 12, 17, 20, 25};
+  for (size_t i = 0; i < indexes.size(); i++) {
+    permuted_bits[i] =
+        ((indexes[i] - 1) < bitvec.size()) ? (bitvec[indexes[i] - 1] - '0') : 0;
+  }
+  auto expected =
+      permute(bits, indexes, BitOrder::LittleEndian, BitIndexBase::One);
+  EXPECT_EQ(expected,
+            permute(bits, indexes, BitOrder::LittleEndian, BitIndexBase::One));
+}
