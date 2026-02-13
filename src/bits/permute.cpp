@@ -1,5 +1,6 @@
 #include "permute.hpp"
 #include <cstdint>
+#include <cstdio>
 #include <vector>
 
 namespace crypto::bits {
@@ -24,17 +25,20 @@ std::vector<uint8_t> permute(const std::vector<uint8_t> &bits,
       index--;
     }
 
-    if (big_endian) {
+    if (!big_endian) {
       index = total_bits - 1 - index;
     }
 
     uint8_t val = 0;
     if (index < total_bits) {
-      val = (bits[index / 8] >> (index % 8)) & 1;
+      val = (bits[index / 8] >> (7 - (index % 8))) & 1;
+      printf("dst: %zu, src: %zu\n", i, index);
     }
 
-    out[i / 8] |= val << (i % 8);
+    out[i / 8] |= val << (7 - (i % 8));
   }
+
+  printf("\n");
 
   return out;
 }

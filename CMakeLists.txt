@@ -22,6 +22,7 @@ include_directories(src)
 add_library(crypto
     src/bits/permute.cpp
     src/bits/substitute.cpp
+    src/bits/utils.cpp
 )
 
 target_include_directories(crypto PUBLIC src)
