@@ -35,3 +35,8 @@
 /target/
 /.cache/
 compile_commands.json
+
+!files/instruction_rc4.txt
+
+files/*
+

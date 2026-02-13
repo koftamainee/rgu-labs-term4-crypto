@@ -9,7 +9,7 @@ namespace crypto::rc4 {
 
 class Encoder final {
 public:
-  Encoder(const std::vector<uint8_t> &key);
+  Encoder(const std::vector<uint8_t> &key = {0});
 
   void mutate(const std::vector<uint8_t> &key);
 

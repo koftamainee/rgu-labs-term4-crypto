@@ -32,13 +32,10 @@ std::vector<uint8_t> permute(const std::vector<uint8_t> &bits,
     uint8_t val = 0;
     if (index < total_bits) {
       val = (bits[index / 8] >> (7 - (index % 8))) & 1;
-      printf("dst: %zu, src: %zu\n", i, index);
     }
 
     out[i / 8] |= val << (7 - (i % 8));
   }
-
-  printf("\n");
 
   return out;
 }

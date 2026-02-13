@@ -6,75 +6,66 @@
 #include <semaphore.h>
 #include <stdexcept>
 #include <sys/mman.h>
+#include <thread>
 #include <unistd.h>
 
-IPCManager::IPCManager()
-    : m_sessions(nullptr), m_shm_fd(-1), m_sessions_count(0) {
+extern std::atomic<bool> g_shutdown;
 
+IPCManager::IPCManager() : m_shm(nullptr), m_shm_fd(-1) {
   m_shm_fd = shm_open(SHARED_MEMORY_NAME, O_CREAT | O_RDWR, 0666);
   if (m_shm_fd < 0) {
-    throw std::runtime_error("Failed to open shared memory");
+    throw std::runtime_error("shm_open failed");
   }
 
-  if (ftruncate(m_shm_fd, sizeof(Session) * MAX_SESSIONS) < 0) {
-    close(m_shm_fd);
-    shm_unlink(SHARED_MEMORY_NAME);
-    throw std::runtime_error("Failed to resize shared memory");
+  if (ftruncate(m_shm_fd, sizeof(SharedMemory)) < 0) {
+    throw std::runtime_error("ftruncate failed");
   }
 
-  m_sessions = static_cast<Session *>(
-      mmap(nullptr, sizeof(Session) * MAX_SESSIONS, PROT_READ | PROT_WRITE,
-           MAP_SHARED, m_shm_fd, 0));
-  if (m_sessions == MAP_FAILED) {
-    close(m_shm_fd);
-    shm_unlink(SHARED_MEMORY_NAME);
-    throw std::runtime_error("Failed to map shared memory");
-  }
+  m_shm = static_cast<SharedMemory *>(mmap(nullptr, sizeof(SharedMemory),
+                                           PROT_READ | PROT_WRITE, MAP_SHARED,
+                                           m_shm_fd, 0));
+
+  if (m_shm == MAP_FAILED)
+    throw std::runtime_error("mmap failed");
 
   for (size_t i = 0; i < MAX_SESSIONS; ++i) {
-    Session *s = m_sessions + i;
-    s->status = SessionStatus::Free;
-    s->operation = OperationType::Mutate;
-    memset(s->data, 0, sizeof(s->data));
-
-    if (sem_init(&s->sem_done, 1, 0) < 0) {
-      munmap(m_sessions, sizeof(Session) * m_sessions_count);
-      close(m_shm_fd);
-      shm_unlink(SHARED_MEMORY_NAME);
-      throw std::runtime_error("Failed to initialize semaphores");
-    }
+    auto &s = m_shm->sessions[i];
+    s.operation = OperationType::Mutate;
+    s.data_size = 0;
+    sem_init(&s.sem_done, 1, 0);
+    sem_init(&s.sem_ready, 1, 0);
   }
 }
 
 IPCManager::~IPCManager() {
-  for (size_t i = 0; i < MAX_SESSIONS; ++i) {
-    sem_destroy(&m_sessions[i].sem_done);
+  for (auto i = 0; i < MAX_SESSIONS; ++i) {
+    sem_destroy(&m_shm->sessions[i].sem_done);
   }
 
-  if (m_sessions != NULL)
-    munmap(m_sessions, sizeof(Session) * MAX_SESSIONS);
-
-  if (m_shm_fd >= 0) {
-    close(m_shm_fd);
-    shm_unlink(SHARED_MEMORY_NAME);
-  }
+  munmap(m_shm, sizeof(SharedMemory));
+  close(m_shm_fd);
+  shm_unlink(SHARED_MEMORY_NAME);
 }
 
-std::optional<IPCManager::SessionData> IPCManager::poll() {
-  for (size_t i = 0; i < MAX_SESSIONS; ++i) {
-    Session &s = m_sessions[i];
+IPCManager::SessionData IPCManager::poll() {
+  while (!g_shutdown.load()) {
+    for (auto i = 0; i < MAX_SESSIONS; ++i) {
+      auto &s = m_shm->sessions[i];
 
-    if (s.status == SessionStatus::Ready) {
-      SessionData result;
-      result.op = s.operation;
-
-      result.data.assign(s.data, s.data + s.data_size);
-
-      return result;
+      if (sem_trywait(&s.sem_ready) == 0) {
+        SessionData out;
+        out.session_id = i;
+        out.op = s.operation;
+        out.data.assign(s.data, s.data + s.data_size);
+        return out;
+      }
     }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 
-  return std::nullopt;
+  // REACHABLE ONLY ON ^C
+  return {};
 }
 
 bool IPCManager::send_result(size_t session_id,
@@ -83,18 +74,20 @@ bool IPCManager::send_result(size_t session_id,
     return false;
   }
 
-  Session &s = m_sessions[session_id];
+  auto &s = m_shm->sessions[session_id];
 
-  if (s.status != SessionStatus::Ready)
-    return false;
-
-  size_t copy_size = std::min(data.size(), sizeof(s.data));
-  std::memcpy(s.data, data.data(), copy_size);
-  s.data_size = copy_size;
-
-  s.status = SessionStatus::Done;
+  size_t n = std::min(data.size(), sizeof(s.data));
+  memcpy(s.data, data.data(), n);
+  s.data_size = n;
 
   sem_post(&s.sem_done);
-
   return true;
+}
+
+crypto::rc4::Encoder &IPCManager::get_encoder(size_t session_id) {
+  if (session_id >= MAX_SESSIONS) {
+    throw std::invalid_argument("Session id out of range");
+  }
+
+  return m_encoders[session_id];
 }

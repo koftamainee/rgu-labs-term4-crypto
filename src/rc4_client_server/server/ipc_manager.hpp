@@ -2,7 +2,7 @@
 #define RC4_CLIENT_SERVER_SERVER_IPC_MANAGER_HPP
 
 #include "../common.hpp"
-#include <optional>
+#include "rc4/encoder.hpp"
 #include <vector>
 
 class IPCManager final {
@@ -16,14 +16,16 @@ public:
   IPCManager();
   ~IPCManager();
 
-  std::optional<SessionData> poll();
+  SessionData poll();
+
+  crypto::rc4::Encoder &get_encoder(size_t session_id);
 
   bool send_result(size_t session_id, const std::vector<uint8_t> &data);
 
 private:
-  Session *m_sessions;
+  SharedMemory *m_shm;
   int m_shm_fd;
-  size_t m_sessions_count;
+  std::array<crypto::rc4::Encoder, MAX_SESSIONS> m_encoders;
 };
 
 #endif // !RC4_CLIENT_SERVER_SERVER_IPC_MANAGER_HPP
