@@ -20,9 +20,9 @@ std::vector<uint8_t> rotate_left(const std::vector<uint8_t> &bits,
   for (auto i = 0; i < n_bits; i++) {
     const auto new_pos = (i + n_bits - shift) % n_bits;
     const auto src_byte = i / 8;
-    const auto src_bit = i % 8;
+    const auto src_bit = 7 - (i % 8);
     const auto dst_byte = new_pos / 8;
-    const auto dst_bit = new_pos % 8;
+    const auto dst_bit = 7 - (new_pos % 8);
 
     uint8_t bit_val = (bits[src_byte] >> (src_bit) & 1);
     res[dst_byte] &= ~(1 << (dst_bit));
@@ -52,9 +52,9 @@ std::vector<uint8_t> rotate_right(const std::vector<uint8_t> &bits,
   for (auto i = 0; i < n_bits; i++) {
     const auto new_pos = (i + n_bits + shift) % n_bits;
     const auto src_byte = i / 8;
-    const auto src_bit = i % 8;
+    const auto src_bit = 7 - (i % 8);
     const auto dst_byte = new_pos / 8;
-    const auto dst_bit = new_pos % 8;
+    const auto dst_bit = 7 - (new_pos % 8);
 
     uint8_t bit_val = (bits[src_byte] >> (src_bit) & 1);
     res[dst_byte] &= ~(1 << (dst_bit));
@@ -82,7 +82,7 @@ std::vector<uint8_t> apply_mask(const std::vector<uint8_t> &bits,
 
   for (auto i = 0; i < n_bits; i++) {
     auto const byte_index = i / 8;
-    auto const bit_index = i % 8;
+    auto const bit_index = 7 - (i % 8);
 
     uint8_t mask_bit = (mask[byte_index] >> bit_index) & 1;
     uint8_t &bit_ref = result[byte_index];
@@ -110,12 +110,62 @@ std::vector<uint8_t> apply_mask(const std::vector<uint8_t> &bits,
 }
 
 std::vector<uint8_t> get_bits(const std::vector<uint8_t> &bits, size_t i,
-                              size_t j) {}
+                              size_t j) {
+  if (i > j) {
+    return {};
+  }
 
-std::vector<uint8_t> swap_bits(const std::vector<uint8_t> &bits, size_t i,
-                               size_t j) {}
+  const size_t total_bits = bits.size() * 8;
+  if (j >= total_bits) {
+    throw std::invalid_argument("index out of bounds");
+  }
 
-std::vector<uint8_t> set_bit(const std::vector<uint8_t> &bits, size_t i,
-                             bool value) {}
+  const auto bit_len = j - i + 1;
+  const auto out_bytes = (bit_len + 7) / 8;
+  std::vector<uint8_t> out(out_bytes, 0);
+
+  for (size_t k = i; k <= j; k++) {
+    uint8_t bit_val = get_bit(bits, k);
+    size_t out_index = k - i;
+    const auto dst_byte = out_index / 8;
+    const auto dst_bit = 7 - (out_index % 8);
+    out[dst_byte] |= bit_val << dst_bit;
+  }
+
+  return out;
+}
+
+void swap_bits(std::vector<uint8_t> &bits, size_t i, size_t j) {
+  if (i == j || bits.empty()) {
+    return;
+  }
+
+  uint8_t bit_i = get_bit(bits, i);
+  uint8_t bit_j = get_bit(bits, j);
+
+  set_bit(bits, i, bit_j);
+  set_bit(bits, j, bit_i);
+}
+
+uint8_t get_bit(const std::vector<uint8_t> &bits, size_t index) {
+  if (index >= bits.size() * 8) {
+    throw std::invalid_argument("index out of bounds");
+  }
+
+  const auto byte = index / 8;
+  const auto bit = 7 - (index % 8);
+  return (bits[byte] >> bit) & 1;
+}
+
+void set_bit(std::vector<uint8_t> &bits, size_t index, uint8_t val) {
+  if (index >= bits.size() * 8) {
+    throw std::invalid_argument("index out of bounds");
+  }
+
+  const auto byte = index / 8;
+  const auto bit = 7 - (index % 8);
+  bits[byte] &= ~(1 << bit);
+  bits[byte] |= (val & 1) << bit;
+}
 
 } // namespace crypto::bits

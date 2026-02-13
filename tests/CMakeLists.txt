@@ -22,3 +22,16 @@ target_link_libraries(test_crypto_bits_substitute
 )
 
 add_test(NAME test_crypto_bits_substitute COMMAND test_crypto_bits_substitute)
+
+
+add_executable(test_crypto_bits_utils
+    test_crypto_bits_utils.cpp
+)
+
+target_link_libraries(test_crypto_bits_utils
+    PRIVATE crypto
+    GTest::gtest
+    GTest::gtest_main
+)
+
+add_test(NAME test_crypto_bits_utils COMMAND test_crypto_bits_utils)

@@ -25,11 +25,11 @@ std::vector<uint8_t> apply_mask(const std::vector<uint8_t> &bits,
 std::vector<uint8_t> get_bits(const std::vector<uint8_t> &bits, size_t i,
                               size_t j);
 
-std::vector<uint8_t> swap_bits(const std::vector<uint8_t> &bits, size_t i,
-                               size_t j);
+void swap_bits(std::vector<uint8_t> &bits, size_t i, size_t j);
 
-std::vector<uint8_t> set_bit(const std::vector<uint8_t> &bits, size_t i,
-                             bool value);
+uint8_t get_bit(const std::vector<uint8_t> &bits, size_t index);
+
+void set_bit(std::vector<uint8_t> &bits, size_t index, uint8_t val);
 
 } // namespace crypto::bits
 
