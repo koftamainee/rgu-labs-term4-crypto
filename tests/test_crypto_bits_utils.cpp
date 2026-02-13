@@ -104,6 +104,5 @@ TEST(bits_edge_cases_test, empty_vector) {
 TEST(bits_edge_cases_test, single_bit) {
   auto bits = bits_from_string("00000001");
   auto res = rotate_left(bits, 1, 1);
-  EXPECT_EQ(bits_to_string(res),
-            "00000001"); // rotation of 1-bit vector is identity
+  EXPECT_EQ(bits_to_string(res), "00000001");
 }

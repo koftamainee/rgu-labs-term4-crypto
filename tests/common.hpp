@@ -13,7 +13,7 @@ inline std::vector<uint8_t> bits_from_string(const std::string &bitstr) {
     for (size_t b = 0; b < 8; b++) {
       if (i + b < bitstr.size() &&
           (bitstr[i + b] == '0' || bitstr[i + b] == '1')) {
-        byte |= (bitstr[i + b] - '0') << (7 - b); // MSB-first
+        byte |= (bitstr[i + b] - '0') << (7 - b);
       }
     }
     bytes.push_back(byte);

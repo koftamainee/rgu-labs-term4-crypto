@@ -32,11 +32,6 @@ build: configure
 	$(Q)$(CMAKE_CMD) --build "$(BUILD_DIR)/$(BUILD_TYPE)"
 	$(Q)cp $(BUILD_DIR)/$(BUILD_TYPE)/compile_commands.json $(BUILD_DIR)/compile_commands.json
 	$(Q)mkdir -p "$(TARGET_DIR)"
-	$(Q)if [ -f "$(BUILD_DIR)/$(BUILD_TYPE)/$(TARGET)" ]; then \
-		cp "$(BUILD_DIR)/$(BUILD_TYPE)/$(TARGET)" "$(TARGET_DIR)/$(TARGET)"; \
-	else \
-		echo "Error: Build failed - target not found"; exit 1; \
-	fi
 
 clean:
 	$(Q)echo "Cleaning build artifacts..."

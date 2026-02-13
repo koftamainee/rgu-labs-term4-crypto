@@ -19,16 +19,6 @@ FetchContent_MakeAvailable(googletest)
 
 include_directories(src)
 
-add_library(crypto
-    src/bits/permute.cpp
-    src/bits/substitute.cpp
-    src/bits/utils.cpp
-)
-
-target_include_directories(crypto PUBLIC src)
-
-add_executable(rgu-labs-term4-crypto src/main.cpp)
-
-target_link_libraries(rgu-labs-term4-crypto PRIVATE crypto)
-
+add_subdirectory(src/crypto)
+add_subdirectory(src/rc4_client_server)
 add_subdirectory(tests)
