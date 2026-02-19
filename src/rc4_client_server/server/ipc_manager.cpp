@@ -2,7 +2,6 @@
 #include "../common.hpp"
 #include <cstring>
 #include <fcntl.h>
-#include <optional>
 #include <semaphore.h>
 #include <stdexcept>
 #include <sys/mman.h>

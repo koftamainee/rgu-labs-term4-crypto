@@ -6,7 +6,7 @@
 #include <semaphore.h>
 
 constexpr auto MAX_DATA_SIZE = 1 * 1024 * 1024; // 1 MB
-constexpr auto MAX_SESSIONS = 2;
+constexpr auto MAX_SESSIONS = 100;
 constexpr auto SHARED_MEMORY_NAME = "/rc4_shm";
 
 enum class OperationType {

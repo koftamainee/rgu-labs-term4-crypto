@@ -6,24 +6,43 @@
 #include "input.hpp"
 #include "session.hpp"
 
+#include <cstdint>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <stdexcept>
+#include <vector>
+
+constexpr std::size_t PROGRESS_THRESHOLD = 10 * 1024 * 1024; // 10 MB
+
 void do_encode(ClientSession &session, const std::string &input_file_path,
                const std::string &output_file_path) {
-  std::ifstream fin(input_file_path, std::ios::binary);
+  std::ifstream fin(input_file_path, std::ios::binary | std::ios::ate);
   if (!fin.is_open()) {
     throw std::runtime_error("Failed to open input file: " + input_file_path);
   }
+
+  const std::size_t total_size = fin.tellg();
+  fin.seekg(0, std::ios::beg);
 
   std::ofstream fout(output_file_path, std::ios::binary);
   if (!fout.is_open()) {
     throw std::runtime_error("Failed to open output file: " + output_file_path);
   }
 
+  const bool show_progress = total_size >= PROGRESS_THRESHOLD;
+
   std::vector<uint8_t> buffer(MAX_DATA_SIZE);
+  std::size_t processed = 0;
+  int last_percent = -1;
+
   while (fin) {
     fin.read(reinterpret_cast<char *>(buffer.data()), MAX_DATA_SIZE);
     std::streamsize bytes_read = fin.gcount();
     if (bytes_read <= 0)
       break;
+
+    processed += static_cast<std::size_t>(bytes_read);
 
     std::vector<uint8_t> chunk(buffer.begin(), buffer.begin() + bytes_read);
 
@@ -31,10 +50,31 @@ void do_encode(ClientSession &session, const std::string &input_file_path,
 
     fout.write(reinterpret_cast<const char *>(encoded_chunk.data()),
                encoded_chunk.size());
-  }
 
-  fin.close();
-  fout.close();
+    if (show_progress) {
+      int bar_width = 50;
+      int percent = static_cast<int>((processed * 100) / total_size);
+      int pos = static_cast<int>((processed * bar_width) / total_size);
+
+      if (percent != last_percent) {
+        std::cout << "\r[";
+        for (int i = 0; i < bar_width; ++i) {
+          if (i < pos)
+            std::cout << "=";
+          else if (i == pos)
+            std::cout << ">";
+          else
+            std::cout << " ";
+        }
+        std::cout << "] " << std::setw(3) << percent << "%";
+        std::cout.flush();
+        last_percent = percent;
+      }
+    }
+  }
+  if (show_progress) {
+    std::cout << "\r";
+  }
 }
 
 void do_mutate_text(ClientSession &session, const std::string &key) {
@@ -80,26 +120,31 @@ int main(int argc, char *argv[]) {
     for (const auto &task : instructions) {
       switch (task.job_type) {
       case JobType::MutateText:
-        std::cout << "Mutatig with key: " << task.arg1 << "... ";
+        std::cout << "Mutatig with key: " << task.arg1 << "...              \n";
         do_mutate_text(session, task.arg1);
-        std::cout << "Done\n";
         break;
 
       case JobType::MutateFile:
-        std::cout << "Mutatig with key from file: " << task.arg1 << "... ";
+        std::cout << "Mutatig with key from file: " << task.arg1
+                  << "...                            \n";
         do_mutate_file(session, task.arg1);
-        std::cout << "Done\n";
+
         break;
 
       case JobType::EncodeFile:
-        std::cout << "Encoding: " << task.arg1 << " to " << task.arg2 << "... ";
+
+        std::cout << "Encoding: " << task.arg1 << " to " << task.arg2
+                  << "...\n";
         do_encode(session, task.arg1, task.arg2);
-        std::cout << "Done\n";
+
         break;
       }
     }
 
-    std::cout << "\nAll tasks done. Ending session." << std::endl;
+    std::cout
+        << "                                                         \nAll "
+           "tasks done. Ending session."
+        << std::endl;
     return 0;
 
   } catch (const std::exception &e) {
