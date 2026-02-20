@@ -21,4 +21,6 @@ include_directories(src)
 
 add_subdirectory(src/crypto)
 add_subdirectory(src/rc4_client_server)
+add_subdirectory(src/des_encoding_demo)
+add_subdirectory(src/des_cli)
 add_subdirectory(tests)

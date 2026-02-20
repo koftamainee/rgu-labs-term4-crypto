@@ -1,5 +1,6 @@
 #include "substitute.hpp"
 #include <cstdint>
+#include <iostream>
 #include <stdexcept>
 
 namespace crypto::bits {
