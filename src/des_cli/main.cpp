@@ -221,61 +221,81 @@ static void process(CipherHandle &handle, const std::string &input_path,
 }
 
 int main(int argc, char *argv[]) {
-  std::string method, hex_key, input_path, output_path;
-  bool decrypt = false;
 
-  for (int i = 1; i < argc; ++i) {
-    std::string arg = argv[i];
-    if ((arg == "-m" || arg == "--method") && i + 1 < argc)
-      method = argv[++i];
-    else if ((arg == "-k" || arg == "--key") && i + 1 < argc)
-      hex_key = argv[++i];
-    else if ((arg == "-i" || arg == "--input") && i + 1 < argc)
-      input_path = argv[++i];
-    else if ((arg == "-o" || arg == "--output") && i + 1 < argc)
-      output_path = argv[++i];
-    else if (arg == "-d" || arg == "--decrypt")
-      decrypt = true;
-    else if (arg == "-h" || arg == "--help") {
-      print_usage(argv[0]);
-      return 0;
-    } else {
-      std::cerr << "Error: unknown argument '" << arg << "'.\n\n";
-      print_usage(argv[0]);
-      return 1;
-    }
-  }
+  auto des_cipher = std::make_unique<crypto::des::DES>();
 
-  if (method.empty() || hex_key.empty() || input_path.empty() ||
-      output_path.empty()) {
-    std::cerr << "Error: -m, -k, -i, and -o are all required.\n\n";
-    print_usage(argv[0]);
-    return 1;
-  }
+  // Create IO wrapper that takes ownership
+  auto cipher_io = std::make_unique<crypto::io::SymmetricCipherIO>(std::move(des_cipher));
 
-  const auto key = hex_to_bytes(hex_key);
-  auto handle = make_cipher(method, key, decrypt);
-  const std::string label = std::string(decrypt ? "Decrypting" : "Encrypting") +
-                            " [" + to_lower(method) + "]";
+  // Set the key
+  std::vector<uint8_t> key = {0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe};
+  cipher_io->set_encryption_key(key);
+  cipher_io->set_decryption_key(key);
 
-  std::cerr << "\n";
-  Spinner spinner(label);
-  spinner.start();
+  // Encrypt some data
+  std::vector<uint8_t> data = {/* your data */};
+  auto encrypted = cipher_io->encrypt_bytes(data);
 
-  bool success = true;
-  try {
-    process(handle, input_path, output_path, decrypt, spinner);
-  } catch (const std::exception &e) {
-    spinner.stop(false);
-    std::cerr << "Error: " << e.what() << "\n";
-    success = false;
-  }
+  // Or encrypt a file
+  cipher_io->encrypt_file("../files/kursach.pdf", "kursach.enc");
 
-  if (success) {
-    spinner.set_progress(100);
-    spinner.stop(true);
-    std::cerr << "\n";
-  }
-
-  return success ? 0 : 1;
+  return 0;
+  //
+  // std::string method, hex_key, input_path, output_path;
+  // bool decrypt = false;
+  //
+  // for (int i = 1; i < argc; ++i) {
+  //   std::string arg = argv[i];
+  //   if ((arg == "-m" || arg == "--method") && i + 1 < argc)
+  //     method = argv[++i];
+  //   else if ((arg == "-k" || arg == "--key") && i + 1 < argc)
+  //     hex_key = argv[++i];
+  //   else if ((arg == "-i" || arg == "--input") && i + 1 < argc)
+  //     input_path = argv[++i];
+  //   else if ((arg == "-o" || arg == "--output") && i + 1 < argc)
+  //     output_path = argv[++i];
+  //   else if (arg == "-d" || arg == "--decrypt")
+  //     decrypt = true;
+  //   else if (arg == "-h" || arg == "--help") {
+  //     print_usage(argv[0]);
+  //     return 0;
+  //   } else {
+  //     std::cerr << "Error: unknown argument '" << arg << "'.\n\n";
+  //     print_usage(argv[0]);
+  //     return 1;
+  //   }
+  // }
+  //
+  // if (method.empty() || hex_key.empty() || input_path.empty() ||
+  //     output_path.empty()) {
+  //   std::cerr << "Error: -m, -k, -i, and -o are all required.\n\n";
+  //   print_usage(argv[0]);
+  //   return 1;
+  // }
+  //
+  // const auto key = hex_to_bytes(hex_key);
+  // auto handle = make_cipher(method, key, decrypt);
+  // const std::string label = std::string(decrypt ? "Decrypting" : "Encrypting") +
+  //                           " [" + to_lower(method) + "]";
+  //
+  // std::cerr << "\n";
+  // Spinner spinner(label);
+  // spinner.start();
+  //
+  // bool success = true;
+  // try {
+  //   process(handle, input_path, output_path, decrypt, spinner);
+  // } catch (const std::exception &e) {
+  //   spinner.stop(false);
+  //   std::cerr << "Error: " << e.what() << "\n";
+  //   success = false;
+  // }
+  //
+  // if (success) {
+  //   spinner.set_progress(100);
+  //   spinner.stop(true);
+  //   std::cerr << "\n";
+  // }
+  //
+  // return success ? 0 : 1;
 }

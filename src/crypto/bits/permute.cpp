@@ -1,6 +1,5 @@
 #include "permute.hpp"
 #include <cstdint>
-#include <cstdio>
 #include <vector>
 
 namespace crypto::bits {

@@ -1,5 +1,5 @@
-#ifndef CRYPTO_ALGHORITMS_TRIPLE_DES_HPP
-#define CRYPTO_ALGHORITMS_TRIPLE_DES_HPP
+#ifndef CRYPTO_ALGORITHMS_TRIPLE_DES_HPP
+#define CRYPTO_ALGORITHMS_TRIPLE_DES_HPP
 
 #include "des.hpp"
 
@@ -40,4 +40,4 @@ private:
 
 } // namespace crypto::des
 
-#endif // !CRYPTO_ALGHORITMS_TRIPLE_DES_HPP
+#endif // !CRYPTO_ALGORITHMS_TRIPLE_DES_HPP

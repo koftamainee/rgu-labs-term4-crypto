@@ -4,9 +4,8 @@
 #include "bits/utils.hpp"
 #include "core/crypto.hpp"
 #include "core/feistel_network.hpp"
-#include <endian.h>
 
-namespace _des_tables {
+namespace des_tables {
 static const std::vector<size_t> IP = {
     58, 50, 42, 34, 26, 18, 10, 2, 60, 52, 44, 36, 28, 20, 12, 4,
     62, 54, 46, 38, 30, 22, 14, 6, 64, 56, 48, 40, 32, 24, 16, 8,
@@ -109,7 +108,7 @@ static const std::vector<size_t> COMPACT_64_32 = {
 static const std::vector<size_t> DES_KEY_SHIFTS = {1, 1, 2, 2, 2, 2, 2, 2,
                                                    1, 2, 2, 2, 2, 2, 2, 1};
 
-} // namespace _des_tables
+} // namespace des_tables
 
 namespace crypto::des {
 
@@ -119,7 +118,7 @@ DES::DES()
 
 void DES::before_rounds(core::Bytes &block, bool encrypting) const {
   block =
-      crypto::bits::permute(block, _des_tables::IP, bits::BitOrder::BigEndian,
+      crypto::bits::permute(block, des_tables::IP, bits::BitOrder::BigEndian,
                             bits::BitIndexBase::One);
 
   (void)encrypting;
@@ -127,7 +126,7 @@ void DES::before_rounds(core::Bytes &block, bool encrypting) const {
 
 void DES::after_rounds(core::Bytes &block, bool encrypting) const {
   block =
-      crypto::bits::permute(block, _des_tables::FP, bits::BitOrder::BigEndian,
+      crypto::bits::permute(block, des_tables::FP, bits::BitOrder::BigEndian,
                             bits::BitIndexBase::One);
 
   (void)encrypting;
@@ -136,26 +135,27 @@ void DES::after_rounds(core::Bytes &block, bool encrypting) const {
 core::RoundKeys DES::KeyExpansionDES::expand(const core::Bytes &key) const {
   core::RoundKeys round_keys(16);
 
-  auto cd = bits::permute(key, _des_tables::PC1, bits::BitOrder::BigEndian,
+  auto cd = bits::permute(key, des_tables::PC1, bits::BitOrder::BigEndian,
                           bits::BitIndexBase::One);
-  auto C = bits::permute(cd, _des_tables::SPLIT_C, bits::BitOrder::BigEndian,
+  auto C = bits::permute(cd, des_tables::SPLIT_C, bits::BitOrder::BigEndian,
                          bits::BitIndexBase::One);
-  auto D = bits::permute(cd, _des_tables::SPLIT_D, bits::BitOrder::BigEndian,
+  auto D = bits::permute(cd, des_tables::SPLIT_D, bits::BitOrder::BigEndian,
                          bits::BitIndexBase::One);
 
   for (int round = 0; round < 16; round++) {
-    bits::rotate_left(C, 28, _des_tables::DES_KEY_SHIFTS[round]);
-    bits::rotate_left(D, 28, _des_tables::DES_KEY_SHIFTS[round]);
+
+    bits::rotate_left(C, 28, des_tables::DES_KEY_SHIFTS[round]);
+    bits::rotate_left(D, 28, des_tables::DES_KEY_SHIFTS[round]);
 
     core::Bytes CD;
     CD.insert(CD.end(), C.begin(), C.end());
     CD.insert(CD.end(), D.begin(), D.end());
 
-    CD = bits::permute(CD, _des_tables::COMPACT_CD, bits::BitOrder::BigEndian,
+    CD = bits::permute(CD, des_tables::COMPACT_CD, bits::BitOrder::BigEndian,
                        bits::BitIndexBase::One);
 
     auto round_key =
-        bits::permute(CD, _des_tables::PC2, bits::BitOrder::BigEndian,
+        bits::permute(CD, des_tables::PC2, bits::BitOrder::BigEndian,
                       bits::BitIndexBase::One);
     round_keys[round] = std::move(round_key);
   }
@@ -167,7 +167,7 @@ core::Bytes
 DES::FeistelRoundFunctionDES::apply(const core::Bytes &half_block,
                                     const core::Bytes &round_key) const {
   auto expanded_half =
-      bits::permute(half_block, _des_tables::E, bits::BitOrder::BigEndian,
+      bits::permute(half_block, des_tables::E, bits::BitOrder::BigEndian,
                     bits::BitIndexBase::One);
 
   for (int i = 0; i < expanded_half.size(); i++) {
@@ -189,17 +189,17 @@ DES::FeistelRoundFunctionDES::apply(const core::Bytes &half_block,
                       bits::BitIndexBase::Zero);
 
     std::vector<uint8_t> four_bits =
-        bits::substitute(six_bits, _des_tables::SBOXES[i], 6, 4);
+        bits::substitute(six_bits, des_tables::SBOXES[i], 6, 4);
 
     substituted_sparce[i] = four_bits[0];
   }
 
   core::Bytes substituted =
-      bits::permute(substituted_sparce, _des_tables::COMPACT_64_32,
+      bits::permute(substituted_sparce, des_tables::COMPACT_64_32,
                     bits::BitOrder::BigEndian, bits::BitIndexBase::One);
 
   auto final_block =
-      bits::permute(substituted, _des_tables::P, bits::BitOrder::BigEndian,
+      bits::permute(substituted, des_tables::P, bits::BitOrder::BigEndian,
                     bits::BitIndexBase::One);
 
   return final_block;
