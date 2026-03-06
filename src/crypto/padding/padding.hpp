@@ -24,6 +24,22 @@ namespace crypto::padding {
     core::Bytes remove(const core::Bytes &data, size_t block_size) const override;
   };
 
+  class PKCS7Padding final : public PaddingMode {
+  public:
+    core::Bytes apply(const core::Bytes &data, size_t block_size) const override;
+    core::Bytes remove(const core::Bytes &data, size_t block_size) const override;
+  };
+
+  class ISO10126Padding final : public PaddingMode {
+  public:
+    explicit ISO10126Padding(uint64_t seed = 0);
+    core::Bytes apply(const core::Bytes &data, size_t block_size) const override;
+    core::Bytes remove(const core::Bytes &data, size_t block_size) const override;
+
+  private:
+    uint64_t m_seed;
+  };
+
 } // namespace crypto::padding
 
 #endif

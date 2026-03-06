@@ -16,13 +16,15 @@ void CipherContext::set_decryption_key(const core::Bytes &key) const {
   m_cipher->set_decryption_key(key);
 }
 
-void CipherContext::encrypt(const core::Bytes &input, core::Bytes &output, size_t threads) const {
+void CipherContext::encrypt(const core::Bytes &input, core::Bytes &output,
+                             size_t threads) const {
   const size_t bs = m_cipher->block_size();
   core::Bytes padded = m_padding->apply(input, bs);
   m_mode->encrypt(*m_cipher, padded, output, threads);
 }
 
-void CipherContext::decrypt(const core::Bytes &input, core::Bytes &output, size_t threads) const {
+void CipherContext::decrypt(const core::Bytes &input, core::Bytes &output,
+                             size_t threads) const {
   core::Bytes raw;
   m_mode->decrypt(*m_cipher, input, raw, threads);
   output = m_padding->remove(raw, m_cipher->block_size());
@@ -31,38 +33,43 @@ void CipherContext::decrypt(const core::Bytes &input, core::Bytes &output, size_
 std::future<void> CipherContext::encrypt_file(const std::string &input_path,
                                                const std::string &output_path,
                                                size_t threads) const {
-  return std::async(std::launch::async, [this, input_path, output_path, threads]() {
-    core::Bytes raw = read_file(input_path);
-    core::Bytes result;
-    encrypt(raw, result, threads);
-    write_file(output_path, result);
-  });
+  return std::async(std::launch::async,
+                    [this, input_path, output_path, threads]() {
+                      core::Bytes raw = read_file(input_path);
+                      core::Bytes result;
+                      encrypt(raw, result, threads);
+                      write_file(output_path, result);
+                    });
 }
 
 std::future<void> CipherContext::decrypt_file(const std::string &input_path,
                                                const std::string &output_path,
                                                size_t threads) const {
-  return std::async(std::launch::async, [this, input_path, output_path, threads]() {
-    core::Bytes raw = read_file(input_path);
-    core::Bytes result;
-    decrypt(raw, result, threads);
-    write_file(output_path, result);
-  });
+  return std::async(std::launch::async,
+                    [this, input_path, output_path, threads]() {
+                      core::Bytes raw = read_file(input_path);
+                      core::Bytes result;
+                      decrypt(raw, result, threads);
+                      write_file(output_path, result);
+                    });
 }
 
 core::Bytes CipherContext::read_file(const std::string &path) {
   std::ifstream file(path, std::ios::binary);
   if (!file) {
-    throw std::runtime_error("CipherContext: cannot open file for reading: " + path);
+    throw std::runtime_error(
+        "CipherContext: cannot open file for reading: " + path);
   }
   return core::Bytes(std::istreambuf_iterator<char>(file),
                      std::istreambuf_iterator<char>());
 }
 
-void CipherContext::write_file(const std::string &path, const core::Bytes &data) {
+void CipherContext::write_file(const std::string &path,
+                                const core::Bytes &data) {
   std::ofstream file(path, std::ios::binary);
   if (!file) {
-    throw std::runtime_error("CipherContext: cannot open file for writing: " + path);
+    throw std::runtime_error(
+        "CipherContext: cannot open file for writing: " + path);
   }
   file.write(reinterpret_cast<const char *>(data.data()), data.size());
   if (!file) {
@@ -81,6 +88,18 @@ void CipherContext::build_mode() {
   case EncryptionMode::PCBC:
     m_mode = std::make_unique<mode::PCBC>(m_iv);
     break;
+  case EncryptionMode::CFB:
+    m_mode = std::make_unique<mode::CFB>(m_iv);
+    break;
+  case EncryptionMode::OFB:
+    m_mode = std::make_unique<mode::OFB>(m_iv);
+    break;
+  case EncryptionMode::CTR:
+    m_mode = std::make_unique<mode::CTR>(m_iv);
+    break;
+  case EncryptionMode::RD:
+    m_mode = std::make_unique<mode::RD>();
+    break;
   default:
     throw std::invalid_argument("CipherContext: unknown encryption mode");
   }
@@ -93,6 +112,12 @@ void CipherContext::build_padding() {
     break;
   case PaddingScheme::AnsiX923:
     m_padding = std::make_unique<padding::AnsiX923Padding>();
+    break;
+  case PaddingScheme::ISO10126:
+    m_padding = std::make_unique<padding::ISO10126Padding>();
+    break;
+  case PaddingScheme::PKCS7:
+    m_padding = std::make_unique<padding::PKCS7Padding>();
     break;
   default:
     throw std::invalid_argument("CipherContext: unknown padding scheme");

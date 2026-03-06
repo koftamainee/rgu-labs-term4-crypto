@@ -338,3 +338,601 @@ TEST(CipherContext, FileEncryptDecryptRoundtrip) {
   Bytes recovered(std::istreambuf_iterator<char>(result_file), {});
   ASSERT_EQ(recovered, original);
 }
+
+TEST(CipherContext, CfbZerosRoundtrip) {
+  Bytes iv(8, 0x1A);
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::Zeros, iv);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::Zeros, iv);
+  Bytes plain = {0x01, 0x02, 0x03, 0x04, 0x05};
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, CfbAnsiX923Roundtrip) {
+  Bytes iv(8, 0xBB);
+  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::AnsiX923, iv);
+  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::AnsiX923, iv);
+  Bytes plain(20, 0x55);
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, CfbEmptyIvUsesZeros) {
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::AnsiX923);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::AnsiX923);
+  Bytes plain = {0xAA, 0xBB, 0xCC};
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, CfbDifferentIvGivesDifferentCiphertext) {
+  Bytes iv1(8, 0x00), iv2(8, 0xFF);
+  Bytes plain(16, 0x42);
+  crypto::CipherContext ctx1(make_xor(), crypto::EncryptionMode::CFB,
+                             crypto::PaddingScheme::Zeros, iv1);
+  crypto::CipherContext ctx2(make_xor(), crypto::EncryptionMode::CFB,
+                             crypto::PaddingScheme::Zeros, iv2);
+  Bytes enc1, enc2;
+  ctx1.encrypt(plain, enc1, 1);
+  ctx2.encrypt(plain, enc2, 1);
+  ASSERT_NE(enc1, enc2);
+}
+
+TEST(CipherContext, CfbLargeDataRoundtrip) {
+  Bytes iv(8, 0x77);
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::AnsiX923, iv);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::AnsiX923, iv);
+  Bytes plain(256);
+  for (size_t i = 0; i < plain.size(); ++i)
+    plain[i] = static_cast<uint8_t>(i);
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, OfbZerosRoundtrip) {
+  Bytes iv(8, 0x2B);
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::OFB,
+                                crypto::PaddingScheme::Zeros, iv);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::OFB,
+                                crypto::PaddingScheme::Zeros, iv);
+  Bytes plain = {0x10, 0x20, 0x30};
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, OfbAnsiX923Roundtrip) {
+  Bytes iv(8, 0x44);
+  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::OFB,
+                                crypto::PaddingScheme::AnsiX923, iv);
+  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::OFB,
+                                crypto::PaddingScheme::AnsiX923, iv);
+  Bytes plain(19, 0xAB);
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, OfbEmptyIvUsesZeros) {
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::OFB,
+                                crypto::PaddingScheme::AnsiX923);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::OFB,
+                                crypto::PaddingScheme::AnsiX923);
+  Bytes plain = {0x01, 0x02, 0x03, 0x04};
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, OfbDifferentIvGivesDifferentCiphertext) {
+  Bytes iv1(8, 0x00), iv2(8, 0x01);
+  Bytes plain(16, 0x99);
+  crypto::CipherContext ctx1(make_xor(), crypto::EncryptionMode::OFB,
+                             crypto::PaddingScheme::Zeros, iv1);
+  crypto::CipherContext ctx2(make_xor(), crypto::EncryptionMode::OFB,
+                             crypto::PaddingScheme::Zeros, iv2);
+  Bytes enc1, enc2;
+  ctx1.encrypt(plain, enc1, 1);
+  ctx2.encrypt(plain, enc2, 1);
+  ASSERT_NE(enc1, enc2);
+}
+
+TEST(CipherContext, OfbEncryptTwiceSamePlaintextSameCiphertext) {
+  Bytes iv(8, 0x55);
+  Bytes plain(16, 0x33);
+  crypto::CipherContext ctx1(make_xor(), crypto::EncryptionMode::OFB,
+                             crypto::PaddingScheme::Zeros, iv);
+  crypto::CipherContext ctx2(make_xor(), crypto::EncryptionMode::OFB,
+                             crypto::PaddingScheme::Zeros, iv);
+  Bytes enc1, enc2;
+  ctx1.encrypt(plain, enc1, 1);
+  ctx2.encrypt(plain, enc2, 1);
+  ASSERT_EQ(enc1, enc2);
+}
+
+TEST(CipherContext, CtrZerosRoundtrip) {
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::Zeros);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::Zeros);
+  Bytes plain = {0xAA, 0xBB, 0xCC, 0xDD};
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, CtrAnsiX923Roundtrip) {
+  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::AnsiX923);
+  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::AnsiX923);
+  Bytes plain(17, 0x7F);
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, CtrParallelMatchesSequential) {
+  crypto::CipherContext ctx_seq(make_xor(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::Zeros);
+  crypto::CipherContext ctx_par(make_xor(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::Zeros);
+  Bytes plain(256);
+  for (size_t i = 0; i < plain.size(); ++i)
+    plain[i] = static_cast<uint8_t>(i);
+  Bytes enc_seq, enc_par;
+  ctx_seq.encrypt(plain, enc_seq, 1);
+  ctx_par.encrypt(plain, enc_par, 4);
+  ASSERT_EQ(enc_seq, enc_par);
+}
+
+TEST(CipherContext, CtrLargeDataRoundtrip) {
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::AnsiX923);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::AnsiX923);
+  Bytes plain(512);
+  for (size_t i = 0; i < plain.size(); ++i)
+    plain[i] = static_cast<uint8_t>(i & 0xFF);
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 4);
+  ctx_dec.decrypt(enc, dec, 4);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, RandomDeltaZerosRoundtrip) {
+  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::RD,
+                                crypto::PaddingScheme::Zeros);
+  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::RD,
+                                crypto::PaddingScheme::Zeros);
+  Bytes plain = {0x01, 0x02, 0x03, 0x04, 0x05};
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, RandomDeltaAnsiX923Roundtrip) {
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::RD,
+                                crypto::PaddingScheme::AnsiX923);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::RD,
+                                crypto::PaddingScheme::AnsiX923);
+  Bytes plain(13, 0xEE);
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, RandomDeltaOutputIsLarger) {
+  crypto::CipherContext ctx(make_identity(), crypto::EncryptionMode::RD,
+                            crypto::PaddingScheme::Zeros);
+  Bytes plain(16, 0x42);
+  Bytes enc;
+  ctx.encrypt(plain, enc, 1);
+  ASSERT_GT(enc.size(), plain.size());
+}
+
+TEST(CipherContext, RandomDeltaTwoEncryptionsDiffer) {
+  crypto::CipherContext ctx1(make_identity(), crypto::EncryptionMode::RD,
+                             crypto::PaddingScheme::Zeros);
+  crypto::CipherContext ctx2(make_identity(), crypto::EncryptionMode::RD,
+                             crypto::PaddingScheme::Zeros);
+  Bytes plain(16, 0x42);
+  Bytes enc1, enc2;
+  ctx1.encrypt(plain, enc1, 1);
+  ctx2.encrypt(plain, enc2, 1);
+  ASSERT_NE(enc1, enc2);
+}
+
+TEST(CipherContext, RandomDeltaLargeDataRoundtrip) {
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::RD,
+                                crypto::PaddingScheme::AnsiX923);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::RD,
+                                crypto::PaddingScheme::AnsiX923);
+  Bytes plain(128);
+  for (size_t i = 0; i < plain.size(); ++i)
+    plain[i] = static_cast<uint8_t>(i * 2);
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, CfbFileRoundtrip) {
+  const std::string in_path  = "/tmp/cfb_plain.bin";
+  const std::string enc_path = "/tmp/cfb_enc.bin";
+  const std::string dec_path = "/tmp/cfb_dec.bin";
+
+  Bytes original(20);
+  for (size_t i = 0; i < original.size(); ++i)
+    original[i] = static_cast<uint8_t>(i + 1);
+  {
+    std::ofstream f(in_path, std::ios::binary);
+    f.write(reinterpret_cast<const char *>(original.data()), original.size());
+  }
+
+  Bytes iv(8, 0xAB);
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::AnsiX923, iv);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::AnsiX923, iv);
+
+  ctx_enc.encrypt_file(in_path, enc_path, 1).get();
+  ctx_dec.decrypt_file(enc_path, dec_path, 1).get();
+
+  std::ifstream result_file(dec_path, std::ios::binary);
+  Bytes recovered(std::istreambuf_iterator<char>(result_file), {});
+  ASSERT_EQ(recovered, original);
+}
+
+TEST(CipherContext, CtrFileRoundtrip) {
+  const std::string in_path  = "/tmp/ctr_plain.bin";
+  const std::string enc_path = "/tmp/ctr_enc.bin";
+  const std::string dec_path = "/tmp/ctr_dec.bin";
+
+  Bytes original(32, 0xCC);
+  {
+    std::ofstream f(in_path, std::ios::binary);
+    f.write(reinterpret_cast<const char *>(original.data()), original.size());
+  }
+
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::AnsiX923);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::AnsiX923);
+
+  ctx_enc.encrypt_file(in_path, enc_path, 2).get();
+  ctx_dec.decrypt_file(enc_path, dec_path, 2).get();
+
+  std::ifstream result_file(dec_path, std::ios::binary);
+  Bytes recovered(std::istreambuf_iterator<char>(result_file), {});
+  ASSERT_EQ(recovered, original);
+}
+
+TEST(PKCS7Padding, ApplyNotAligned) {
+  crypto::padding::PKCS7Padding p;
+  Bytes data = {0x01, 0x02, 0x03};
+  Bytes padded = p.apply(data, 8);
+  ASSERT_EQ(padded.size(), 8u);
+  for (size_t i = 3; i < 8; ++i)
+    ASSERT_EQ(padded[i], 5u);
+}
+
+TEST(PKCS7Padding, ApplyAlreadyAligned) {
+  crypto::padding::PKCS7Padding p;
+  Bytes data(8, 0x01);
+  Bytes padded = p.apply(data, 8);
+  ASSERT_EQ(padded.size(), 16u);
+  for (size_t i = 8; i < 16; ++i)
+    ASSERT_EQ(padded[i], 8u);
+}
+
+TEST(PKCS7Padding, Roundtrip) {
+  crypto::padding::PKCS7Padding p;
+  Bytes data = {0xDE, 0xAD, 0xBE, 0xEF};
+  Bytes padded = p.apply(data, 8);
+  Bytes recovered = p.remove(padded, 8);
+  ASSERT_EQ(recovered, data);
+}
+
+TEST(PKCS7Padding, RoundtripFullBlock) {
+  crypto::padding::PKCS7Padding p;
+  Bytes data(16, 0xFF);
+  Bytes padded = p.apply(data, 8);
+  ASSERT_EQ(padded.size(), 24u);
+  Bytes recovered = p.remove(padded, 8);
+  ASSERT_EQ(recovered, data);
+}
+
+TEST(PKCS7Padding, EmptyInput) {
+  crypto::padding::PKCS7Padding p;
+  Bytes data;
+  Bytes padded = p.apply(data, 8);
+  ASSERT_EQ(padded.size(), 8u);
+  for (auto b : padded)
+    ASSERT_EQ(b, 8u);
+  Bytes recovered = p.remove(padded, 8);
+  ASSERT_TRUE(recovered.empty());
+}
+
+TEST(PKCS7Padding, BlockSizeZeroThrows) {
+  crypto::padding::PKCS7Padding p;
+  ASSERT_THROW(p.apply({0x01}, 0), std::invalid_argument);
+  ASSERT_THROW(p.remove({0x01, 0x01}, 0), std::invalid_argument);
+}
+
+TEST(PKCS7Padding, BlockSizeOver255Throws) {
+  crypto::padding::PKCS7Padding p;
+  ASSERT_THROW(p.apply({0x01}, 256), std::invalid_argument);
+}
+
+TEST(PKCS7Padding, InvalidPaddingByteThrows) {
+  crypto::padding::PKCS7Padding p;
+  Bytes bad(8, 0x03);
+  bad.back() = 0x04;
+  ASSERT_THROW(p.remove(bad, 8), std::invalid_argument);
+}
+
+TEST(PKCS7Padding, ZeroPadByteThrows) {
+  crypto::padding::PKCS7Padding p;
+  Bytes bad(8, 0x00);
+  ASSERT_THROW(p.remove(bad, 8), std::invalid_argument);
+}
+
+TEST(PKCS7Padding, PadByteExceedsBlockSizeThrows) {
+  crypto::padding::PKCS7Padding p;
+  Bytes bad(8, 0x00);
+  bad.back() = 9;
+  ASSERT_THROW(p.remove(bad, 8), std::invalid_argument);
+}
+
+TEST(ISO10126Padding, ApplySize) {
+  crypto::padding::ISO10126Padding p(42);
+  Bytes data = {0x01, 0x02, 0x03};
+  Bytes padded = p.apply(data, 8);
+  ASSERT_EQ(padded.size(), 8u);
+  ASSERT_EQ(padded.back(), 5u);
+}
+
+TEST(ISO10126Padding, ApplyAlreadyAligned) {
+  crypto::padding::ISO10126Padding p(42);
+  Bytes data(8, 0x01);
+  Bytes padded = p.apply(data, 8);
+  ASSERT_EQ(padded.size(), 16u);
+  ASSERT_EQ(padded.back(), 8u);
+}
+
+TEST(ISO10126Padding, Roundtrip) {
+  crypto::padding::ISO10126Padding p(42);
+  Bytes data = {0xDE, 0xAD, 0xBE, 0xEF};
+  Bytes padded = p.apply(data, 8);
+  Bytes recovered = p.remove(padded, 8);
+  ASSERT_EQ(recovered, data);
+}
+
+TEST(ISO10126Padding, RoundtripFullBlock) {
+  crypto::padding::ISO10126Padding p(42);
+  Bytes data(16, 0xAB);
+  Bytes padded = p.apply(data, 8);
+  ASSERT_EQ(padded.size(), 24u);
+  Bytes recovered = p.remove(padded, 8);
+  ASSERT_EQ(recovered, data);
+}
+
+TEST(ISO10126Padding, EmptyInput) {
+  crypto::padding::ISO10126Padding p(42);
+  Bytes data;
+  Bytes padded = p.apply(data, 8);
+  ASSERT_EQ(padded.size(), 8u);
+  ASSERT_EQ(padded.back(), 8u);
+  Bytes recovered = p.remove(padded, 8);
+  ASSERT_TRUE(recovered.empty());
+}
+
+TEST(ISO10126Padding, BlockSizeZeroThrows) {
+  crypto::padding::ISO10126Padding p(42);
+  ASSERT_THROW(p.apply({0x01}, 0), std::invalid_argument);
+  ASSERT_THROW(p.remove({0x01, 0x01}, 0), std::invalid_argument);
+}
+
+TEST(ISO10126Padding, BlockSizeOver255Throws) {
+  crypto::padding::ISO10126Padding p(42);
+  ASSERT_THROW(p.apply({0x01}, 256), std::invalid_argument);
+}
+
+TEST(ISO10126Padding, ZeroPadByteThrows) {
+  crypto::padding::ISO10126Padding p(42);
+  Bytes bad(8, 0x00);
+  ASSERT_THROW(p.remove(bad, 8), std::invalid_argument);
+}
+
+TEST(ISO10126Padding, PadByteExceedsBlockSizeThrows) {
+  crypto::padding::ISO10126Padding p(42);
+  Bytes bad(8, 0x00);
+  bad.back() = 9;
+  ASSERT_THROW(p.remove(bad, 8), std::invalid_argument);
+}
+
+TEST(ISO10126Padding, RandomBytesInPadding) {
+  crypto::padding::ISO10126Padding p1(1), p2(2);
+  Bytes data = {0x01, 0x02};
+  Bytes padded1 = p1.apply(data, 8);
+  Bytes padded2 = p2.apply(data, 8);
+  ASSERT_NE(padded1, padded2);
+}
+
+TEST(ISO10126Padding, DeterministicWithSameSeed) {
+  crypto::padding::ISO10126Padding p1(99), p2(99);
+  Bytes data = {0xAA, 0xBB};
+  ASSERT_EQ(p1.apply(data, 8), p2.apply(data, 8));
+}
+
+TEST(CipherContext, EcbPKCS7Roundtrip) {
+  crypto::CipherContext ctx(make_xor(), crypto::EncryptionMode::ECB,
+                            crypto::PaddingScheme::PKCS7);
+  Bytes plain = {0x01, 0x02, 0x03, 0x04, 0x05};
+  Bytes enc, dec;
+  ctx.encrypt(plain, enc, 1);
+  ctx.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, CbcPKCS7Roundtrip) {
+  Bytes iv(8, 0xAA);
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CBC,
+                                crypto::PaddingScheme::PKCS7, iv);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CBC,
+                                crypto::PaddingScheme::PKCS7, iv);
+  Bytes plain(13, 0x55);
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, CfbPKCS7Roundtrip) {
+  Bytes iv(8, 0x12);
+  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::PKCS7, iv);
+  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::PKCS7, iv);
+  Bytes plain = {0x11, 0x22, 0x33};
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, OfbPKCS7Roundtrip) {
+  Bytes iv(8, 0x34);
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::OFB,
+                                crypto::PaddingScheme::PKCS7, iv);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::OFB,
+                                crypto::PaddingScheme::PKCS7, iv);
+  Bytes plain(11, 0x7E);
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, CtrPKCS7Roundtrip) {
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::PKCS7);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::PKCS7);
+  Bytes plain = {0xCA, 0xFE, 0xBA, 0xBE};
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, EcbISO10126Roundtrip) {
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::ECB,
+                                crypto::PaddingScheme::ISO10126);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::ECB,
+                                crypto::PaddingScheme::ISO10126);
+  Bytes plain = {0x01, 0x02, 0x03, 0x04, 0x05};
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, CbcISO10126Roundtrip) {
+  Bytes iv(8, 0xBB);
+  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::CBC,
+                                crypto::PaddingScheme::ISO10126, iv);
+  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::CBC,
+                                crypto::PaddingScheme::ISO10126, iv);
+  Bytes plain(10, 0x99);
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, CfbISO10126Roundtrip) {
+  Bytes iv(8, 0x56);
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::ISO10126, iv);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CFB,
+                                crypto::PaddingScheme::ISO10126, iv);
+  Bytes plain = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE};
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, OfbISO10126Roundtrip) {
+  Bytes iv(8, 0x78);
+  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::OFB,
+                                crypto::PaddingScheme::ISO10126, iv);
+  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::OFB,
+                                crypto::PaddingScheme::ISO10126, iv);
+  Bytes plain(15, 0x11);
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, CtrISO10126Roundtrip) {
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::ISO10126);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CTR,
+                                crypto::PaddingScheme::ISO10126);
+  Bytes plain = {0x10, 0x20, 0x30, 0x40, 0x50, 0x60};
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, RandomDeltaPKCS7Roundtrip) {
+  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::RD,
+                                crypto::PaddingScheme::PKCS7);
+  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::RD,
+                                crypto::PaddingScheme::PKCS7);
+  Bytes plain = {0xDE, 0xAD, 0xBE, 0xEF};
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
+
+TEST(CipherContext, RandomDeltaISO10126Roundtrip) {
+  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::RD,
+                                crypto::PaddingScheme::ISO10126);
+  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::RD,
+                                crypto::PaddingScheme::ISO10126);
+  Bytes plain(7, 0x42);
+  Bytes enc, dec;
+  ctx_enc.encrypt(plain, enc, 1);
+  ctx_dec.decrypt(enc, dec, 1);
+  ASSERT_EQ(dec, plain);
+}
