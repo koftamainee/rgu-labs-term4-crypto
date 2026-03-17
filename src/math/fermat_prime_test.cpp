@@ -1,19 +1,22 @@
 //
 // Created by koftamainee on 3/17/26.
 //
-
 #include "fermat_prime_test.h"
 
+#include <random>
+
+#include "utils.hpp"
 
 namespace math {
-  bool FermatPrimeTest::single_test_iteration(const bigint& n, int iteration_index) const {
-    bigint a;
+  FermatPrimeTest::FermatPrimeTest(): m_rng(gmp_randinit_default) {
+    m_rng.seed(std::random_device{}());
+  }
 
-    do {
-      a = bigint::rand_range(2, n - 2);
-    } while (bigint::gcd(a, n) != 1);
+  bool FermatPrimeTest::single_test_iteration(const mpz_class& n, int iteration_index) const {
 
-    const bigint result = a.mod_pow(n - 1, n);
+    const mpz_class a = m_rng.get_z_range(n - 3) + 2;
+
+    const mpz_class result = math::powm(a, n - 1, n);
     return result == 1;
   }
 }

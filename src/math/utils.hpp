@@ -5,33 +5,33 @@
 #ifndef RGU_LABS_TERM4_CRYPTO_MATH_SERVICE_H
 #define RGU_LABS_TERM4_CRYPTO_MATH_SERVICE_H
 
-#include <bigint.h>
+#include <gmpxx.h>
+
 
 namespace math {
-  int legendre_symbol(const bigint& a, const bigint& p);
+  int legendre_symbol(const mpz_class& a, const mpz_class& p);
 
-  int jacobi_symbol(const bigint& a, const bigint& n);
+  int jacobi_symbol(const mpz_class& a, const mpz_class& n);
 
-  bigint gcd(const bigint& a, const bigint& b);
+  mpz_class gcd(const mpz_class& a, const mpz_class& b);
 
   struct egcd_result_t {
-    bigint gcd;
-    bigint x;
-    bigint y;
+    mpz_class gcd;
+    mpz_class x;
+    mpz_class y;
   };
 
-  egcd_result_t egcd(const bigint& a, const bigint& b);
+  egcd_result_t egcd(const mpz_class& a, const mpz_class& b);
 
-  bigint powm(const bigint &base, const bigint &exp, const bigint &mod);
+  mpz_class powm(const mpz_class& base, const mpz_class& exp, const mpz_class& mod);
 
-  bigint mod_inverse(const bigint &a, const bigint &mod);
+  mpz_class mod_inverse(const mpz_class& a, const mpz_class& mod);
 
-  bigint euler_phi_definition(const bigint &n);
+  mpz_class euler_phi_definition(const mpz_class& n);
 
-  bigint euler_phi_factorization(const bigint &n);
+  mpz_class euler_phi_factorization(const mpz_class& n);
 
-  bigint euler_phi_dft(const bigint &n);
-
+  mpz_class euler_phi_dft(const mpz_class& n);
 }
 
 #endif //RGU_LABS_TERM4_CRYPTO_MATH_SERVICE_H

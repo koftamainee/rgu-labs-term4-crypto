@@ -5,7 +5,7 @@
 #include "prime_test.hpp"
 
 namespace math {
-  bool PrimeTest::is_prime(const bigint& n, double min_probability) {
+  bool PrimeTest::is_prime(const mpz_class& n, double min_probability) {
     if (n < 2) { return false; }
     if (n == 2) { return true; }
     if (n == 3) { return true; }

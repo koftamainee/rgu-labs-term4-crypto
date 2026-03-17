@@ -1,164 +1,166 @@
 //
 // Created by koftamainee on 3/17/26.
 //
-
 #include "utils.hpp"
-
 #include <cmath>
 #include <sys/stat.h>
 
 namespace math {
-  int legendre_symbol(const bigint& a, const bigint& p) {
-    const bigint a_mod = a % p;
+  int legendre_symbol(const mpz_class& a, const mpz_class& p) {
+    const mpz_class a_mod = a % p;
     if (a_mod == 0) {
       return 0;
     }
-
-    const bigint exp = (p - 1) / 2;
-    const bigint result = math::powm(a_mod, exp, p);
-
-    if (result == 0) {
-      return 0;
-    }
-    if (result == 1L) {
+    const mpz_class result = math::powm(a_mod, (p - 1) / 2, p);
+    if (result == 1) {
       return 1;
     }
     return -1;
   }
 
-  int jacobi_symbol(const bigint& a, const bigint& n) {
-    if (n <= 0 || n % 2L == 0) {
+  int jacobi_symbol(const mpz_class& a, const mpz_class& n) {
+    if (n <= 0 || n % 2 == 0) {
       throw std::invalid_argument("n must be a positive odd integer");
     }
-
-    bigint a_cur = a % n;
+    mpz_class a_cur = a % n;
     if (a_cur < 0) {
       a_cur += n;
     }
-    bigint n_cur = n;
-
+    mpz_class n_cur = n;
     int result = 1;
-
     while (a_cur != 0) {
-      while (a_cur != 0) {
-        auto div_res = bigint::division(a_cur, 2);
-        auto r = div_res.remainder();
-        const auto q = div_res.quotient();
-        if (r != 0) break;
-        a_cur = q;
-        if (bigint n_mod8 = n_cur % 8L; n_mod8 == 3L || n_mod8 == 5L) {
+      while (a_cur % 2 == 0) {
+        a_cur /= 2;
+        if (const mpz_class n_mod8 = n_cur % 8; n_mod8 == 3 || n_mod8 == 5) {
           result = -result;
         }
       }
-
       std::swap(a_cur, n_cur);
-
-      if (a_cur % 4L == 3L && n_cur % 4L == 3L) {
+      if (a_cur % 4 == 3 && n_cur % 4 == 3) {
         result = -result;
       }
-
       a_cur = a_cur % n_cur;
     }
-
-    if (n_cur == 1L) {
+    if (n_cur == 1) {
       return result;
     }
     return 0;
   }
 
-  bigint gcd(const bigint& a, const bigint& b) {
-    return bigint::gcd(a, b);
+  mpz_class gcd(const mpz_class& a, const mpz_class& b) {
+    mpz_class x, y;
+    mpz_abs(x.get_mpz_t(), a.get_mpz_t());
+    mpz_abs(y.get_mpz_t(), b.get_mpz_t());
+    while (y != 0) {
+      mpz_class r;
+      mpz_tdiv_qr(x.get_mpz_t(), r.get_mpz_t(), x.get_mpz_t(), y.get_mpz_t());
+      x = y;
+      y = r;
+    }
+    return x;
   }
 
-  egcd_result_t egcd(const bigint& a, const bigint& b) {
-    bigint old_r = a, r = b;
-    bigint old_s(1), s(0);
-    bigint old_t(0), t(1);
-
+  egcd_result_t egcd(const mpz_class& a, const mpz_class& b) {
+    mpz_class old_r = a, r = b;
+    mpz_class old_s(1), s(0);
+    mpz_class old_t(0), t(1);
     while (r != 0) {
-      auto div_res = bigint::division(old_r, r);
-      auto q = div_res.quotient();
-      const auto new_r = div_res.remainder();
-
+      mpz_class q, new_r;
+      mpz_tdiv_qr(q.get_mpz_t(), new_r.get_mpz_t(), old_r.get_mpz_t(), r.get_mpz_t());
       old_r = r;
       r = new_r;
-
-      bigint new_s = old_s - q * s;
+      const mpz_class new_s = old_s - q * s;
       old_s = s;
       s = new_s;
-
-      bigint new_t = old_t - q * t;
+      const mpz_class new_t = old_t - q * t;
       old_t = t;
       t = new_t;
     }
-
     return {old_r, old_s, old_t};
   }
 
-  bigint powm(const bigint& base, const bigint& exp, const bigint& mod) {
-    return base.mod_pow(exp, mod);
+  mpz_class powm(const mpz_class& base, const mpz_class& exp, const mpz_class& mod) {
+    if (mod == 1) return 0;
+    mpz_class result(1);
+    mpz_class b = base % mod;
+    mpz_class e = exp;
+    while (e > 0) {
+      if (e % 2 == 1) {
+        result = (result * b) % mod;
+      }
+      e /= 2;
+      b = (b * b) % mod;
+    }
+    return result;
   }
 
-  bigint mod_inverse(const bigint& a, const bigint& mod) {
-    std::cout << "TODO\n";
+  mpz_class mod_inverse(const mpz_class& a, const mpz_class& mod) {
+    const auto [g, x, y] = egcd(a, mod);
+    if (g != 1) {
+      throw std::invalid_argument("mod_inverse: a and mod are not coprime");
+    }
+    return ((x % mod) + mod) % mod;
   }
 
-  bigint euler_phi_definition(const bigint& n) {
+  mpz_class euler_phi_definition(const mpz_class& n) {
     if (n <= 0) {
       throw std::invalid_argument("euler_phi_definition: n must be positive");
     }
-    if (n == 1L) {
+    if (n == 1) {
       return 1;
     }
-
-    bigint count(0);
-    for (bigint k(1L); k < n; ++k) {
-      if (bigint::gcd(k, n) == 1L) {
+    mpz_class count(0);
+    for (mpz_class k(1); k < n; ++k) {
+      if (gcd(k, n) == 1) {
         ++count;
       }
     }
     return count;
   }
 
-  bigint euler_phi_factorization(const bigint& n) {
+  mpz_class euler_phi_factorization(const mpz_class& n) {
     if (n <= 0) {
       throw std::invalid_argument("euler_phi_factorization: n must be positive");
     }
-    if (n == 1L) {
-      return 1L;
+    if (n == 1) {
+      return 1;
     }
-
-    bigint result = n;
-    bigint temp = n;
-    bigint i(2L);
-
+    mpz_class result = n;
+    mpz_class temp = n;
+    mpz_class i(2);
     while (i * i <= temp) {
-      auto div_res = bigint::division(temp, i);
-      auto q = div_res.quotient();
-      auto r = div_res.remainder();
+      mpz_class q, r;
+      mpz_tdiv_qr(q.get_mpz_t(), r.get_mpz_t(), temp.get_mpz_t(), i.get_mpz_t());
       if (r == 0) {
         result /= i;
-        result *= (i - 1L);
-
+        result *= (i - 1);
         while (r == 0) {
           temp = q;
-          auto div_res2 = bigint::division(temp, i);
-          q = div_res2.quotient();
-          r = div_res2.remainder();
+          mpz_tdiv_qr(q.get_mpz_t(), r.get_mpz_t(), temp.get_mpz_t(), i.get_mpz_t());
         }
       }
       ++i;
     }
-
-    if (temp > 1L) {
+    if (temp > 1) {
       result /= temp;
-      result *= (temp - 1L);
+      result *= (temp - 1);
     }
-
     return result;
   }
 
-  bigint euler_phi_dft(const bigint& n) {
-    std::cout << "TODO\n";
+  mpz_class euler_phi_dft(const mpz_class& n) {
+    if (n <= 0) {
+      throw std::invalid_argument("euler_phi_dft: n must be positive");
+    }
+    if (n == 1) {
+      return 1;
+    }
+    double result = 0.0;
+    for (mpz_class k(1); k <= n; ++k) {
+      const mpz_class g = gcd(k, n);
+      const double angle = 2.0 * M_PI * mpz_get_d(k.get_mpz_t()) / mpz_get_d(n.get_mpz_t());
+      result += mpz_get_d(g.get_mpz_t()) * std::cos(angle);
+    }
+    return static_cast<long>(std::round(result));
   }
 }
