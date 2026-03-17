@@ -82,7 +82,7 @@ public:
 
 private:
   void process(core::SymmetricCipher &cipher, const core::Bytes &input,
-               core::Bytes &output, size_t threads);
+               core::Bytes &output, size_t threads) const;
   static core::Bytes make_counter_block(const core::Bytes &nonce, uint64_t counter,
                                         size_t bs);
   core::Bytes m_nonce;

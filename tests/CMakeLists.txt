@@ -5,6 +5,7 @@ function(add_crypto_test target source)
     target_link_libraries(${target}
         PRIVATE
             crypto
+            math
             GTest::gtest
             GTest::gtest_main
     )
@@ -21,3 +22,4 @@ add_crypto_test(test_crypto_rc4_encoder     test_crypto_rc4_encoder.cpp)
 add_crypto_test(test_crypto_des             test_crypto_des.cpp)
 add_crypto_test(test_crypto_triple_des      test_crypto_triple_des.cpp)
 add_crypto_test(test_crypto_cipher_context  test_crypto_cipher_context.cpp)
+add_crypto_test(test_math_utils             test_math_utils.cpp)

@@ -296,7 +296,7 @@ namespace crypto::mode {
   }
 
   void CTR::process(core::SymmetricCipher& cipher, const core::Bytes& input,
-                    core::Bytes& output, size_t threads) {
+                    core::Bytes& output, size_t threads) const {
     const size_t bs = cipher.block_size();
     if (input.size() % bs != 0)
       throw std::invalid_argument("CTR: input not block-aligned");
