@@ -1,16 +1,12 @@
 add_library(math STATIC
         utils.cpp
+        fermat_prime_test.cpp
+        fermat_prime_test.h
+        prime_test.cpp
+        prime_test.hpp
 )
-include(FetchContent)
-FetchContent_Declare(
-        bigmath
-        GIT_REPOSITORY https://github.com/koftamainee/bigmath.git
-        GIT_TAG master
-)
-set(BIGMATH_BUILD_TESTS   OFF CACHE BOOL "" FORCE)
-set(BIGMATH_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(bigmath)
 
-target_link_libraries(math PUBLIC bigmath++)
 
-target_include_directories(math PUBLIC .)
+target_include_directories(math PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_subdirectory(bigint)

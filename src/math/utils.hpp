@@ -5,7 +5,7 @@
 #ifndef RGU_LABS_TERM4_CRYPTO_MATH_SERVICE_H
 #define RGU_LABS_TERM4_CRYPTO_MATH_SERVICE_H
 
-#include <bigmath/bigint.hpp>
+#include <bigint.h>
 
 namespace math {
   int legendre_symbol(const bigint& a, const bigint& p);

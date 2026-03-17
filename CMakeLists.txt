@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 4.0)
 
-project(rgu-labs-term4-crypto LANGUAGES CXX)
+project(rgu-labs-term4-crypto LANGUAGES C CXX)
 
 include(FetchContent)
 

@@ -7,19 +7,17 @@
 #include <cmath>
 #include <sys/stat.h>
 
-#include "bigmath.hpp"
-
 namespace math {
   int legendre_symbol(const bigint& a, const bigint& p) {
     const bigint a_mod = a % p;
-    if (a_mod == 0L) {
+    if (a_mod == 0) {
       return 0;
     }
 
     const bigint exp = (p - 1) / 2;
     const bigint result = math::powm(a_mod, exp, p);
 
-    if (result == 0L) {
+    if (result == 0) {
       return 0;
     }
     if (result == 1L) {
@@ -29,22 +27,24 @@ namespace math {
   }
 
   int jacobi_symbol(const bigint& a, const bigint& n) {
-    if (n <= 0L || n % 2L == 0L) {
+    if (n <= 0 || n % 2L == 0) {
       throw std::invalid_argument("n must be a positive odd integer");
     }
 
     bigint a_cur = a % n;
-    if (a_cur < 0L) {
+    if (a_cur < 0) {
       a_cur += n;
     }
     bigint n_cur = n;
 
     int result = 1;
 
-    while (a_cur != 0L) {
-      while (a_cur != 0L) {
-        auto [q, r] = a_cur.tdiv_qr(bigint(2L));
-        if (r != 0L) break;
+    while (a_cur != 0) {
+      while (a_cur != 0) {
+        auto div_res = bigint::division(a_cur, 2);
+        auto r = div_res.remainder();
+        const auto q = div_res.quotient();
+        if (r != 0) break;
         a_cur = q;
         if (bigint n_mod8 = n_cur % 8L; n_mod8 == 3L || n_mod8 == 5L) {
           result = -result;
@@ -72,11 +72,13 @@ namespace math {
 
   egcd_result_t egcd(const bigint& a, const bigint& b) {
     bigint old_r = a, r = b;
-    bigint old_s(1L), s(0L);
-    bigint old_t(0L), t(1L);
+    bigint old_s(1), s(0);
+    bigint old_t(0), t(1);
 
-    while (r != 0L) {
-      auto [q, new_r] = old_r.tdiv_qr(r);
+    while (r != 0) {
+      auto div_res = bigint::division(old_r, r);
+      auto q = div_res.quotient();
+      const auto new_r = div_res.remainder();
 
       old_r = r;
       r = new_r;
@@ -94,26 +96,22 @@ namespace math {
   }
 
   bigint powm(const bigint& base, const bigint& exp, const bigint& mod) {
-    return base.powm(exp, mod);
+    return base.mod_pow(exp, mod);
   }
 
   bigint mod_inverse(const bigint& a, const bigint& mod) {
-    bigint result;
-    if (!a.invert(result, mod)) {
-      throw std::invalid_argument("mod_inverse: a and mod are not coprime");
-    }
-    return result;
+    std::cout << "TODO\n";
   }
 
   bigint euler_phi_definition(const bigint& n) {
-    if (n <= 0L) {
+    if (n <= 0) {
       throw std::invalid_argument("euler_phi_definition: n must be positive");
     }
     if (n == 1L) {
       return 1;
     }
 
-    bigint count(0L);
+    bigint count(0);
     for (bigint k(1L); k < n; ++k) {
       if (bigint::gcd(k, n) == 1L) {
         ++count;
@@ -123,7 +121,7 @@ namespace math {
   }
 
   bigint euler_phi_factorization(const bigint& n) {
-    if (n <= 0L) {
+    if (n <= 0) {
       throw std::invalid_argument("euler_phi_factorization: n must be positive");
     }
     if (n == 1L) {
@@ -135,15 +133,18 @@ namespace math {
     bigint i(2L);
 
     while (i * i <= temp) {
-      if (auto [q, r] = temp.tdiv_qr(i); r == 0L) {
+      auto div_res = bigint::division(temp, i);
+      auto q = div_res.quotient();
+      auto r = div_res.remainder();
+      if (r == 0) {
         result /= i;
         result *= (i - 1L);
 
-        while (r == 0L) {
+        while (r == 0) {
           temp = q;
-          auto [q2, r2] = temp.tdiv_qr(i);
-          q = q2;
-          r = r2;
+          auto div_res2 = bigint::division(temp, i);
+          q = div_res2.quotient();
+          r = div_res2.remainder();
         }
       }
       ++i;
@@ -158,15 +159,6 @@ namespace math {
   }
 
   bigint euler_phi_dft(const bigint& n) {
-    double result = 0.0;
-    auto n_val = static_cast<long int>(n);
-
-    for (long int k = 1; k <= n_val; ++k) {
-      bigint g = gcd(bigint(k), n);
-      double angle = 2.0 * M_PI * static_cast<double>(k) / static_cast<double>(n_val);
-      result += static_cast<double>(static_cast<long int>(g)) * std::cos(angle);
-    }
-
-    return static_cast<long int>(std::round(result));
+    std::cout << "TODO\n";
   }
 }
