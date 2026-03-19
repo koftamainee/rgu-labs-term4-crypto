@@ -2,8 +2,8 @@
 // Created by koftamainee on 3/17/26.
 //
 #include "utils.hpp"
+
 #include <cmath>
-#include <sys/stat.h>
 
 namespace math {
   int legendre_symbol(const mpz_class& a, const mpz_class& p) {
@@ -11,7 +11,7 @@ namespace math {
     if (a_mod == 0) {
       return 0;
     }
-    const mpz_class result = math::powm(a_mod, (p - 1) / 2, p);
+    const mpz_class result = powm(a_mod, (p - 1) / 2, p);
     if (result == 1) {
       return 1;
     }
@@ -48,16 +48,7 @@ namespace math {
   }
 
   mpz_class gcd(const mpz_class& a, const mpz_class& b) {
-    mpz_class x, y;
-    mpz_abs(x.get_mpz_t(), a.get_mpz_t());
-    mpz_abs(y.get_mpz_t(), b.get_mpz_t());
-    while (y != 0) {
-      mpz_class r;
-      mpz_tdiv_qr(x.get_mpz_t(), r.get_mpz_t(), x.get_mpz_t(), y.get_mpz_t());
-      x = y;
-      y = r;
-    }
-    return x;
+    return egcd(a, b).gcd;
   }
 
   egcd_result_t egcd(const mpz_class& a, const mpz_class& b) {
@@ -127,23 +118,16 @@ namespace math {
     }
     mpz_class result = n;
     mpz_class temp = n;
-    mpz_class i(2);
-    while (i * i <= temp) {
-      mpz_class q, r;
-      mpz_tdiv_qr(q.get_mpz_t(), r.get_mpz_t(), temp.get_mpz_t(), i.get_mpz_t());
-      if (r == 0) {
-        result /= i;
-        result *= (i - 1);
-        while (r == 0) {
-          temp = q;
-          mpz_tdiv_qr(q.get_mpz_t(), r.get_mpz_t(), temp.get_mpz_t(), i.get_mpz_t());
+    for (mpz_class i(2); i * i <= temp; ++i) {
+      if (temp % i == 0) {
+        result -= result / i;
+        while (temp % i == 0) {
+          temp /= i;
         }
       }
-      ++i;
     }
     if (temp > 1) {
-      result /= temp;
-      result *= (temp - 1);
+      result -= result / temp;
     }
     return result;
   }
