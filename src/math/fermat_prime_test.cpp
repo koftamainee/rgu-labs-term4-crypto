@@ -1,7 +1,7 @@
 //
 // Created by koftamainee on 3/17/26.
 //
-#include "fermat_prime_test.h"
+#include "fermat_prime_test.hpp"
 
 #include <random>
 

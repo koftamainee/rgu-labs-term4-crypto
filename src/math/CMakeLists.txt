@@ -1,9 +1,9 @@
 add_library(math STATIC
         utils.cpp
         fermat_prime_test.cpp
-        fermat_prime_test.h
+        solovay_strassen_prime_test.cpp
+        miller_rabin_prime_test.cpp
         prime_test.cpp
-        prime_test.hpp
 )
 
 

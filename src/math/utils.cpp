@@ -48,7 +48,8 @@ namespace math {
   }
 
   mpz_class gcd(const mpz_class& a, const mpz_class& b) {
-    return egcd(a, b).gcd;
+    const auto result = egcd(a, b);
+    return abs(result.gcd);
   }
 
   egcd_result_t egcd(const mpz_class& a, const mpz_class& b) {

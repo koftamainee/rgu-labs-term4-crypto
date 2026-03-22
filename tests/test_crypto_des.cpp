@@ -90,7 +90,7 @@ TEST(DES_tests, long_data_multiple_blocks) {
   std::vector<uint8_t> decrypted(data.size());
   std::vector<uint8_t> decrypted2(data.size());
   for (size_t i = 0; i < encrypted.size(); i += 8) {
-    std::vector<uint8_t> block(encrypted.begin() + i,
+        std::vector<uint8_t> block(encrypted.begin() + i,
                                encrypted.begin() + i + 8);
 
     std::vector<uint8_t> block2(encrypted2.begin() + i,
