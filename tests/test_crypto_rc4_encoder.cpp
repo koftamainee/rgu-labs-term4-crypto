@@ -1,4 +1,4 @@
-#include "rc4/encoder.hpp"
+#include "stream/algorithms/rc4/encoder.hpp"
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <vector>

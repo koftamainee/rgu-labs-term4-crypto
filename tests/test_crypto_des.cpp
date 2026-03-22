@@ -1,4 +1,4 @@
-#include "crypto/algorithms/des.hpp"
+#include "crypto/symmetric/algorithms/des/des.hpp"
 #include "gtest/gtest.h"
 #include <cstdint>
 #include <vector>

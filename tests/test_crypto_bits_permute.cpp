@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <gtest/gtest.h>
 
-#include "bits/permute.hpp"
+#include "crypto/internal/bits/permute.hpp"
 #include "common.hpp"
 
 using namespace crypto::bits;

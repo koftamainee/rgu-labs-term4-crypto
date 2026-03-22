@@ -5,11 +5,11 @@
 
 #include <gtest/gtest.h>
 
-#include "cipher_context.hpp"
-#include "mode/modes.hpp"
-#include "padding/padding.hpp"
+#include "../src/crypto/symmetric/cipher_context.hpp"
+#include "symmetric/mode/modes.hpp"
+#include "symmetric/padding/padding.hpp"
 
-using Bytes = crypto::core::Bytes;
+using Bytes = crypto::Bytes;
 
 class IdentityCipher final : public crypto::core::SymmetricCipher {
 public:
@@ -242,8 +242,8 @@ TEST(PCBC, ErrorPropagation) {
 }
 
 TEST(CipherContext, EcbZerosRoundtrip) {
-  crypto::CipherContext ctx(make_identity(), crypto::EncryptionMode::ECB,
-                            crypto::PaddingScheme::Zeros);
+  crypto::SymmetricCipherContext ctx(make_identity(), crypto::SymmetricEncryptionMode::ECB,
+                            crypto::SymmetricPaddingScheme::Zeros);
   Bytes plain = {1, 2, 3, 4, 5};
   Bytes enc, dec;
   ctx.encrypt(plain, enc, 1);
@@ -252,8 +252,8 @@ TEST(CipherContext, EcbZerosRoundtrip) {
 }
 
 TEST(CipherContext, EcbAnsiX923Roundtrip) {
-  crypto::CipherContext ctx(make_xor(), crypto::EncryptionMode::ECB,
-                            crypto::PaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx(make_xor(), crypto::SymmetricEncryptionMode::ECB,
+                            crypto::SymmetricPaddingScheme::AnsiX923);
   Bytes plain = {0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE};
   Bytes enc, dec;
   ctx.encrypt(plain, enc, 2);
@@ -263,8 +263,8 @@ TEST(CipherContext, EcbAnsiX923Roundtrip) {
 
 TEST(CipherContext, CbcZerosRoundtrip) {
   Bytes iv(8, 0x5A);
-  crypto::CipherContext ctx(make_xor(), crypto::EncryptionMode::CBC,
-                            crypto::PaddingScheme::Zeros, iv);
+  crypto::SymmetricCipherContext ctx(make_xor(), crypto::SymmetricEncryptionMode::CBC,
+                            crypto::SymmetricPaddingScheme::Zeros, iv);
   Bytes plain(13, 0x11);
   Bytes enc, dec;
   ctx.encrypt(plain, enc, 1);
@@ -274,8 +274,8 @@ TEST(CipherContext, CbcZerosRoundtrip) {
 
 TEST(CipherContext, PcbcAnsiX923Roundtrip) {
   Bytes iv(8, 0xF0);
-  crypto::CipherContext ctx(make_identity(), crypto::EncryptionMode::PCBC,
-                            crypto::PaddingScheme::AnsiX923, iv);
+  crypto::SymmetricCipherContext ctx(make_identity(), crypto::SymmetricEncryptionMode::PCBC,
+                            crypto::SymmetricPaddingScheme::AnsiX923, iv);
   Bytes plain = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
                  0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
   Bytes enc, dec;
@@ -286,16 +286,16 @@ TEST(CipherContext, PcbcAnsiX923Roundtrip) {
 
 TEST(CipherContext, NullCipherThrows) {
   ASSERT_THROW(
-    crypto::CipherContext(nullptr, crypto::EncryptionMode::ECB,
-                          crypto::PaddingScheme::Zeros),
+    crypto::SymmetricCipherContext(nullptr, crypto::SymmetricEncryptionMode::ECB,
+                          crypto::SymmetricPaddingScheme::Zeros),
     std::invalid_argument);
 }
 
 TEST(CipherContext, CbcEmptyIvUsesZeros) {
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CBC,
-                                crypto::PaddingScheme::AnsiX923);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CBC,
-                                crypto::PaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::CBC,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::CBC,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
   Bytes plain = {0xAB, 0xCD, 0xEF};
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -304,8 +304,8 @@ TEST(CipherContext, CbcEmptyIvUsesZeros) {
 }
 
 TEST(CipherContext, MultithreadedEcbLargeData) {
-  crypto::CipherContext ctx(make_xor(), crypto::EncryptionMode::ECB,
-                            crypto::PaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx(make_xor(), crypto::SymmetricEncryptionMode::ECB,
+                            crypto::SymmetricPaddingScheme::AnsiX923);
   Bytes plain(1024);
   for (size_t i = 0; i < plain.size(); ++i)
     plain[i] = static_cast<uint8_t>(i & 0xFF);
@@ -326,10 +326,10 @@ TEST(CipherContext, FileEncryptDecryptRoundtrip) {
     f.write(reinterpret_cast<const char *>(original.data()), original.size());
   }
 
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CBC,
-                                crypto::PaddingScheme::AnsiX923, Bytes(8, 0x00));
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CBC,
-                                crypto::PaddingScheme::AnsiX923, Bytes(8, 0x00));
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::CBC,
+                                crypto::SymmetricPaddingScheme::AnsiX923, Bytes(8, 0x00));
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::CBC,
+                                crypto::SymmetricPaddingScheme::AnsiX923, Bytes(8, 0x00));
 
   ctx_enc.encrypt_file(in_path, enc_path, 2).get();
   ctx_dec.decrypt_file(enc_path, dec_path, 2).get();
@@ -341,10 +341,10 @@ TEST(CipherContext, FileEncryptDecryptRoundtrip) {
 
 TEST(CipherContext, CfbZerosRoundtrip) {
   Bytes iv(8, 0x1A);
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::Zeros, iv);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::Zeros, iv);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::Zeros, iv);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::Zeros, iv);
   Bytes plain = {0x01, 0x02, 0x03, 0x04, 0x05};
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -354,10 +354,10 @@ TEST(CipherContext, CfbZerosRoundtrip) {
 
 TEST(CipherContext, CfbAnsiX923Roundtrip) {
   Bytes iv(8, 0xBB);
-  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::AnsiX923, iv);
-  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::AnsiX923, iv);
+  crypto::SymmetricCipherContext ctx_enc(make_identity(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::AnsiX923, iv);
+  crypto::SymmetricCipherContext ctx_dec(make_identity(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::AnsiX923, iv);
   Bytes plain(20, 0x55);
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -366,10 +366,10 @@ TEST(CipherContext, CfbAnsiX923Roundtrip) {
 }
 
 TEST(CipherContext, CfbEmptyIvUsesZeros) {
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::AnsiX923);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
   Bytes plain = {0xAA, 0xBB, 0xCC};
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -380,10 +380,10 @@ TEST(CipherContext, CfbEmptyIvUsesZeros) {
 TEST(CipherContext, CfbDifferentIvGivesDifferentCiphertext) {
   Bytes iv1(8, 0x00), iv2(8, 0xFF);
   Bytes plain(16, 0x42);
-  crypto::CipherContext ctx1(make_xor(), crypto::EncryptionMode::CFB,
-                             crypto::PaddingScheme::Zeros, iv1);
-  crypto::CipherContext ctx2(make_xor(), crypto::EncryptionMode::CFB,
-                             crypto::PaddingScheme::Zeros, iv2);
+  crypto::SymmetricCipherContext ctx1(make_xor(), crypto::SymmetricEncryptionMode::CFB,
+                             crypto::SymmetricPaddingScheme::Zeros, iv1);
+  crypto::SymmetricCipherContext ctx2(make_xor(), crypto::SymmetricEncryptionMode::CFB,
+                             crypto::SymmetricPaddingScheme::Zeros, iv2);
   Bytes enc1, enc2;
   ctx1.encrypt(plain, enc1, 1);
   ctx2.encrypt(plain, enc2, 1);
@@ -392,10 +392,10 @@ TEST(CipherContext, CfbDifferentIvGivesDifferentCiphertext) {
 
 TEST(CipherContext, CfbLargeDataRoundtrip) {
   Bytes iv(8, 0x77);
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::AnsiX923, iv);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::AnsiX923, iv);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::AnsiX923, iv);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::AnsiX923, iv);
   Bytes plain(256);
   for (size_t i = 0; i < plain.size(); ++i)
     plain[i] = static_cast<uint8_t>(i);
@@ -407,10 +407,10 @@ TEST(CipherContext, CfbLargeDataRoundtrip) {
 
 TEST(CipherContext, OfbZerosRoundtrip) {
   Bytes iv(8, 0x2B);
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::OFB,
-                                crypto::PaddingScheme::Zeros, iv);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::OFB,
-                                crypto::PaddingScheme::Zeros, iv);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::OFB,
+                                crypto::SymmetricPaddingScheme::Zeros, iv);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::OFB,
+                                crypto::SymmetricPaddingScheme::Zeros, iv);
   Bytes plain = {0x10, 0x20, 0x30};
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -420,10 +420,10 @@ TEST(CipherContext, OfbZerosRoundtrip) {
 
 TEST(CipherContext, OfbAnsiX923Roundtrip) {
   Bytes iv(8, 0x44);
-  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::OFB,
-                                crypto::PaddingScheme::AnsiX923, iv);
-  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::OFB,
-                                crypto::PaddingScheme::AnsiX923, iv);
+  crypto::SymmetricCipherContext ctx_enc(make_identity(), crypto::SymmetricEncryptionMode::OFB,
+                                crypto::SymmetricPaddingScheme::AnsiX923, iv);
+  crypto::SymmetricCipherContext ctx_dec(make_identity(), crypto::SymmetricEncryptionMode::OFB,
+                                crypto::SymmetricPaddingScheme::AnsiX923, iv);
   Bytes plain(19, 0xAB);
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -432,10 +432,10 @@ TEST(CipherContext, OfbAnsiX923Roundtrip) {
 }
 
 TEST(CipherContext, OfbEmptyIvUsesZeros) {
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::OFB,
-                                crypto::PaddingScheme::AnsiX923);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::OFB,
-                                crypto::PaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::OFB,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::OFB,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
   Bytes plain = {0x01, 0x02, 0x03, 0x04};
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -446,10 +446,10 @@ TEST(CipherContext, OfbEmptyIvUsesZeros) {
 TEST(CipherContext, OfbDifferentIvGivesDifferentCiphertext) {
   Bytes iv1(8, 0x00), iv2(8, 0x01);
   Bytes plain(16, 0x99);
-  crypto::CipherContext ctx1(make_xor(), crypto::EncryptionMode::OFB,
-                             crypto::PaddingScheme::Zeros, iv1);
-  crypto::CipherContext ctx2(make_xor(), crypto::EncryptionMode::OFB,
-                             crypto::PaddingScheme::Zeros, iv2);
+  crypto::SymmetricCipherContext ctx1(make_xor(), crypto::SymmetricEncryptionMode::OFB,
+                             crypto::SymmetricPaddingScheme::Zeros, iv1);
+  crypto::SymmetricCipherContext ctx2(make_xor(), crypto::SymmetricEncryptionMode::OFB,
+                             crypto::SymmetricPaddingScheme::Zeros, iv2);
   Bytes enc1, enc2;
   ctx1.encrypt(plain, enc1, 1);
   ctx2.encrypt(plain, enc2, 1);
@@ -459,10 +459,10 @@ TEST(CipherContext, OfbDifferentIvGivesDifferentCiphertext) {
 TEST(CipherContext, OfbEncryptTwiceSamePlaintextSameCiphertext) {
   Bytes iv(8, 0x55);
   Bytes plain(16, 0x33);
-  crypto::CipherContext ctx1(make_xor(), crypto::EncryptionMode::OFB,
-                             crypto::PaddingScheme::Zeros, iv);
-  crypto::CipherContext ctx2(make_xor(), crypto::EncryptionMode::OFB,
-                             crypto::PaddingScheme::Zeros, iv);
+  crypto::SymmetricCipherContext ctx1(make_xor(), crypto::SymmetricEncryptionMode::OFB,
+                             crypto::SymmetricPaddingScheme::Zeros, iv);
+  crypto::SymmetricCipherContext ctx2(make_xor(), crypto::SymmetricEncryptionMode::OFB,
+                             crypto::SymmetricPaddingScheme::Zeros, iv);
   Bytes enc1, enc2;
   ctx1.encrypt(plain, enc1, 1);
   ctx2.encrypt(plain, enc2, 1);
@@ -470,10 +470,10 @@ TEST(CipherContext, OfbEncryptTwiceSamePlaintextSameCiphertext) {
 }
 
 TEST(CipherContext, CtrZerosRoundtrip) {
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::Zeros);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::Zeros);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::Zeros);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::Zeros);
   Bytes plain = {0xAA, 0xBB, 0xCC, 0xDD};
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -482,10 +482,10 @@ TEST(CipherContext, CtrZerosRoundtrip) {
 }
 
 TEST(CipherContext, CtrAnsiX923Roundtrip) {
-  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::AnsiX923);
-  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_enc(make_identity(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_dec(make_identity(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
   Bytes plain(17, 0x7F);
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -494,10 +494,10 @@ TEST(CipherContext, CtrAnsiX923Roundtrip) {
 }
 
 TEST(CipherContext, CtrParallelMatchesSequential) {
-  crypto::CipherContext ctx_seq(make_xor(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::Zeros);
-  crypto::CipherContext ctx_par(make_xor(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::Zeros);
+  crypto::SymmetricCipherContext ctx_seq(make_xor(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::Zeros);
+  crypto::SymmetricCipherContext ctx_par(make_xor(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::Zeros);
   Bytes plain(256);
   for (size_t i = 0; i < plain.size(); ++i)
     plain[i] = static_cast<uint8_t>(i);
@@ -508,10 +508,10 @@ TEST(CipherContext, CtrParallelMatchesSequential) {
 }
 
 TEST(CipherContext, CtrLargeDataRoundtrip) {
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::AnsiX923);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
   Bytes plain(512);
   for (size_t i = 0; i < plain.size(); ++i)
     plain[i] = static_cast<uint8_t>(i & 0xFF);
@@ -522,10 +522,10 @@ TEST(CipherContext, CtrLargeDataRoundtrip) {
 }
 
 TEST(CipherContext, RandomDeltaZerosRoundtrip) {
-  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::RD,
-                                crypto::PaddingScheme::Zeros);
-  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::RD,
-                                crypto::PaddingScheme::Zeros);
+  crypto::SymmetricCipherContext ctx_enc(make_identity(), crypto::SymmetricEncryptionMode::RD,
+                                crypto::SymmetricPaddingScheme::Zeros);
+  crypto::SymmetricCipherContext ctx_dec(make_identity(), crypto::SymmetricEncryptionMode::RD,
+                                crypto::SymmetricPaddingScheme::Zeros);
   Bytes plain = {0x01, 0x02, 0x03, 0x04, 0x05};
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -534,10 +534,10 @@ TEST(CipherContext, RandomDeltaZerosRoundtrip) {
 }
 
 TEST(CipherContext, RandomDeltaAnsiX923Roundtrip) {
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::RD,
-                                crypto::PaddingScheme::AnsiX923);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::RD,
-                                crypto::PaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::RD,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::RD,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
   Bytes plain(13, 0xEE);
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -546,8 +546,8 @@ TEST(CipherContext, RandomDeltaAnsiX923Roundtrip) {
 }
 
 TEST(CipherContext, RandomDeltaOutputIsLarger) {
-  crypto::CipherContext ctx(make_identity(), crypto::EncryptionMode::RD,
-                            crypto::PaddingScheme::Zeros);
+  crypto::SymmetricCipherContext ctx(make_identity(), crypto::SymmetricEncryptionMode::RD,
+                            crypto::SymmetricPaddingScheme::Zeros);
   Bytes plain(16, 0x42);
   Bytes enc;
   ctx.encrypt(plain, enc, 1);
@@ -555,10 +555,10 @@ TEST(CipherContext, RandomDeltaOutputIsLarger) {
 }
 
 TEST(CipherContext, RandomDeltaTwoEncryptionsDiffer) {
-  crypto::CipherContext ctx1(make_identity(), crypto::EncryptionMode::RD,
-                             crypto::PaddingScheme::Zeros);
-  crypto::CipherContext ctx2(make_identity(), crypto::EncryptionMode::RD,
-                             crypto::PaddingScheme::Zeros);
+  crypto::SymmetricCipherContext ctx1(make_identity(), crypto::SymmetricEncryptionMode::RD,
+                             crypto::SymmetricPaddingScheme::Zeros);
+  crypto::SymmetricCipherContext ctx2(make_identity(), crypto::SymmetricEncryptionMode::RD,
+                             crypto::SymmetricPaddingScheme::Zeros);
   Bytes plain(16, 0x42);
   Bytes enc1, enc2;
   ctx1.encrypt(plain, enc1, 1);
@@ -567,10 +567,10 @@ TEST(CipherContext, RandomDeltaTwoEncryptionsDiffer) {
 }
 
 TEST(CipherContext, RandomDeltaLargeDataRoundtrip) {
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::RD,
-                                crypto::PaddingScheme::AnsiX923);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::RD,
-                                crypto::PaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::RD,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::RD,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
   Bytes plain(128);
   for (size_t i = 0; i < plain.size(); ++i)
     plain[i] = static_cast<uint8_t>(i * 2);
@@ -594,10 +594,10 @@ TEST(CipherContext, CfbFileRoundtrip) {
   }
 
   Bytes iv(8, 0xAB);
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::AnsiX923, iv);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::AnsiX923, iv);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::AnsiX923, iv);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::AnsiX923, iv);
 
   ctx_enc.encrypt_file(in_path, enc_path, 1).get();
   ctx_dec.decrypt_file(enc_path, dec_path, 1).get();
@@ -618,10 +618,10 @@ TEST(CipherContext, CtrFileRoundtrip) {
     f.write(reinterpret_cast<const char *>(original.data()), original.size());
   }
 
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::AnsiX923);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::AnsiX923);
 
   ctx_enc.encrypt_file(in_path, enc_path, 2).get();
   ctx_dec.decrypt_file(enc_path, dec_path, 2).get();
@@ -790,8 +790,8 @@ TEST(ISO10126Padding, DeterministicWithSameSeed) {
 }
 
 TEST(CipherContext, EcbPKCS7Roundtrip) {
-  crypto::CipherContext ctx(make_xor(), crypto::EncryptionMode::ECB,
-                            crypto::PaddingScheme::PKCS7);
+  crypto::SymmetricCipherContext ctx(make_xor(), crypto::SymmetricEncryptionMode::ECB,
+                            crypto::SymmetricPaddingScheme::PKCS7);
   Bytes plain = {0x01, 0x02, 0x03, 0x04, 0x05};
   Bytes enc, dec;
   ctx.encrypt(plain, enc, 1);
@@ -801,10 +801,10 @@ TEST(CipherContext, EcbPKCS7Roundtrip) {
 
 TEST(CipherContext, CbcPKCS7Roundtrip) {
   Bytes iv(8, 0xAA);
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CBC,
-                                crypto::PaddingScheme::PKCS7, iv);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CBC,
-                                crypto::PaddingScheme::PKCS7, iv);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::CBC,
+                                crypto::SymmetricPaddingScheme::PKCS7, iv);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::CBC,
+                                crypto::SymmetricPaddingScheme::PKCS7, iv);
   Bytes plain(13, 0x55);
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -814,10 +814,10 @@ TEST(CipherContext, CbcPKCS7Roundtrip) {
 
 TEST(CipherContext, CfbPKCS7Roundtrip) {
   Bytes iv(8, 0x12);
-  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::PKCS7, iv);
-  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::PKCS7, iv);
+  crypto::SymmetricCipherContext ctx_enc(make_identity(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::PKCS7, iv);
+  crypto::SymmetricCipherContext ctx_dec(make_identity(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::PKCS7, iv);
   Bytes plain = {0x11, 0x22, 0x33};
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -827,10 +827,10 @@ TEST(CipherContext, CfbPKCS7Roundtrip) {
 
 TEST(CipherContext, OfbPKCS7Roundtrip) {
   Bytes iv(8, 0x34);
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::OFB,
-                                crypto::PaddingScheme::PKCS7, iv);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::OFB,
-                                crypto::PaddingScheme::PKCS7, iv);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::OFB,
+                                crypto::SymmetricPaddingScheme::PKCS7, iv);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::OFB,
+                                crypto::SymmetricPaddingScheme::PKCS7, iv);
   Bytes plain(11, 0x7E);
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -839,10 +839,10 @@ TEST(CipherContext, OfbPKCS7Roundtrip) {
 }
 
 TEST(CipherContext, CtrPKCS7Roundtrip) {
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::PKCS7);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::PKCS7);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::PKCS7);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::PKCS7);
   Bytes plain = {0xCA, 0xFE, 0xBA, 0xBE};
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -851,10 +851,10 @@ TEST(CipherContext, CtrPKCS7Roundtrip) {
 }
 
 TEST(CipherContext, EcbISO10126Roundtrip) {
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::ECB,
-                                crypto::PaddingScheme::ISO10126);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::ECB,
-                                crypto::PaddingScheme::ISO10126);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::ECB,
+                                crypto::SymmetricPaddingScheme::ISO10126);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::ECB,
+                                crypto::SymmetricPaddingScheme::ISO10126);
   Bytes plain = {0x01, 0x02, 0x03, 0x04, 0x05};
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -864,10 +864,10 @@ TEST(CipherContext, EcbISO10126Roundtrip) {
 
 TEST(CipherContext, CbcISO10126Roundtrip) {
   Bytes iv(8, 0xBB);
-  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::CBC,
-                                crypto::PaddingScheme::ISO10126, iv);
-  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::CBC,
-                                crypto::PaddingScheme::ISO10126, iv);
+  crypto::SymmetricCipherContext ctx_enc(make_identity(), crypto::SymmetricEncryptionMode::CBC,
+                                crypto::SymmetricPaddingScheme::ISO10126, iv);
+  crypto::SymmetricCipherContext ctx_dec(make_identity(), crypto::SymmetricEncryptionMode::CBC,
+                                crypto::SymmetricPaddingScheme::ISO10126, iv);
   Bytes plain(10, 0x99);
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -877,10 +877,10 @@ TEST(CipherContext, CbcISO10126Roundtrip) {
 
 TEST(CipherContext, CfbISO10126Roundtrip) {
   Bytes iv(8, 0x56);
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::ISO10126, iv);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CFB,
-                                crypto::PaddingScheme::ISO10126, iv);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::ISO10126, iv);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::CFB,
+                                crypto::SymmetricPaddingScheme::ISO10126, iv);
   Bytes plain = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE};
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -890,10 +890,10 @@ TEST(CipherContext, CfbISO10126Roundtrip) {
 
 TEST(CipherContext, OfbISO10126Roundtrip) {
   Bytes iv(8, 0x78);
-  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::OFB,
-                                crypto::PaddingScheme::ISO10126, iv);
-  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::OFB,
-                                crypto::PaddingScheme::ISO10126, iv);
+  crypto::SymmetricCipherContext ctx_enc(make_identity(), crypto::SymmetricEncryptionMode::OFB,
+                                crypto::SymmetricPaddingScheme::ISO10126, iv);
+  crypto::SymmetricCipherContext ctx_dec(make_identity(), crypto::SymmetricEncryptionMode::OFB,
+                                crypto::SymmetricPaddingScheme::ISO10126, iv);
   Bytes plain(15, 0x11);
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -902,10 +902,10 @@ TEST(CipherContext, OfbISO10126Roundtrip) {
 }
 
 TEST(CipherContext, CtrISO10126Roundtrip) {
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::ISO10126);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::CTR,
-                                crypto::PaddingScheme::ISO10126);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::ISO10126);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::CTR,
+                                crypto::SymmetricPaddingScheme::ISO10126);
   Bytes plain = {0x10, 0x20, 0x30, 0x40, 0x50, 0x60};
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -914,10 +914,10 @@ TEST(CipherContext, CtrISO10126Roundtrip) {
 }
 
 TEST(CipherContext, RandomDeltaPKCS7Roundtrip) {
-  crypto::CipherContext ctx_enc(make_identity(), crypto::EncryptionMode::RD,
-                                crypto::PaddingScheme::PKCS7);
-  crypto::CipherContext ctx_dec(make_identity(), crypto::EncryptionMode::RD,
-                                crypto::PaddingScheme::PKCS7);
+  crypto::SymmetricCipherContext ctx_enc(make_identity(), crypto::SymmetricEncryptionMode::RD,
+                                crypto::SymmetricPaddingScheme::PKCS7);
+  crypto::SymmetricCipherContext ctx_dec(make_identity(), crypto::SymmetricEncryptionMode::RD,
+                                crypto::SymmetricPaddingScheme::PKCS7);
   Bytes plain = {0xDE, 0xAD, 0xBE, 0xEF};
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);
@@ -926,10 +926,10 @@ TEST(CipherContext, RandomDeltaPKCS7Roundtrip) {
 }
 
 TEST(CipherContext, RandomDeltaISO10126Roundtrip) {
-  crypto::CipherContext ctx_enc(make_xor(), crypto::EncryptionMode::RD,
-                                crypto::PaddingScheme::ISO10126);
-  crypto::CipherContext ctx_dec(make_xor(), crypto::EncryptionMode::RD,
-                                crypto::PaddingScheme::ISO10126);
+  crypto::SymmetricCipherContext ctx_enc(make_xor(), crypto::SymmetricEncryptionMode::RD,
+                                crypto::SymmetricPaddingScheme::ISO10126);
+  crypto::SymmetricCipherContext ctx_dec(make_xor(), crypto::SymmetricEncryptionMode::RD,
+                                crypto::SymmetricPaddingScheme::ISO10126);
   Bytes plain(7, 0x42);
   Bytes enc, dec;
   ctx_enc.encrypt(plain, enc, 1);

@@ -1,4 +1,4 @@
-#include "bits/substitute.hpp"
+#include "internal/bits/substitute.hpp"
 #include <cstdint>
 #include <gtest/gtest.h>
 

@@ -1,21 +1,20 @@
 add_library(crypto STATIC
-    bits/permute.cpp
-    bits/substitute.cpp
-    bits/utils.cpp
-    rc4/encoder.cpp
-
-    core/feistel_network.cpp
-    core/feistel_network_wrapper.cpp
-
-    algorithms/des.cpp
-    algorithms/triple_des.cpp
-    
-    io/symmetric_cipher.cpp
-        padding/padding.cpp
-        mode/modes.cpp
-        cipher_context.cpp
-        ../../tests/test_crypto_cipher_context.cpp
-        mode/cipher_mode.hpp
+        internal/bits/permute.cpp
+        internal/bits/substitute.cpp
+        internal/bits/utils.cpp
+        internal/core/feistel_network.cpp
+        internal/core/feistel_network_wrapper.cpp
+        symmetric/algorithms/des/des.cpp
+        symmetric/algorithms/triple_des/triple_des.cpp
+        symmetric/padding/padding.cpp
+        symmetric/mode/modes.cpp
+        symmetric/cipher_context.cpp
+        stream/algorithms/rc4/encoder.cpp
+        asymmetric/algorithms/rsa/key_generator.cpp
+        asymmetric/algorithms/rsa/rsa.cpp
+        asymmetric/algorithms/rsa/key_serializer.cpp
 )
 
 target_include_directories(crypto PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(crypto PUBLIC math)

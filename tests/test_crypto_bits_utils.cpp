@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <gtest/gtest.h>
 
-#include "bits/utils.hpp"
+#include "internal/bits/utils.hpp"
 
 #include "common.hpp"
 
