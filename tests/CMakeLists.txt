@@ -1,18 +1,26 @@
+cmake_minimum_required(VERSION 3.20)
+
 find_package(GTest REQUIRED)
+include(CTest)
+include(GoogleTest)
 
 function(add_crypto_test target source)
     add_executable(${target} ${source})
+
     target_link_libraries(${target}
-        PRIVATE
+            PRIVATE
             crypto
             math
+            rsa_vulnerabilities
             GTest::gtest
             GTest::gtest_main
     )
+
     target_include_directories(${target} PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
+            ${CMAKE_SOURCE_DIR}/src
     )
-    add_test(NAME ${target} COMMAND ${target})
+
+    gtest_discover_tests(${target})
 endfunction()
 
 add_crypto_test(test_crypto_bits_permute            test_crypto_bits_permute.cpp)
@@ -29,3 +37,4 @@ add_crypto_test(test_math_solovay_strassen_prime    test_math_solovay_strassen_p
 add_crypto_test(test_crypto_rsa_keygen              test_crypto_rsa_keygen.cpp)
 add_crypto_test(test_crypto_rsa                     test_crypto_rsa.cpp)
 add_crypto_test(test_crypto_rsa_serializer          test_crypto_rsa_serializer.cpp)
+add_crypto_test(test_rsa_vulnerabilities            test_rsa_vulnerabilities.cpp)

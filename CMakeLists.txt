@@ -10,16 +10,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 enable_testing()
 
-FetchContent_Declare(
-        googletest
-        URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
-)
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
-
 include_directories(src)
 
 add_subdirectory(src/crypto)
 add_subdirectory(src/cli_test)
 add_subdirectory(src/math)
+add_subdirectory(src/rsa_vulnerabilities)
 add_subdirectory(tests)

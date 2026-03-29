@@ -1,6 +1,7 @@
 #include "crypto/symmetric/algorithms/des/des.hpp"
 #include "gtest/gtest.h"
 #include <cstdint>
+#include <iomanip>
 #include <vector>
 
 using namespace crypto::des;
