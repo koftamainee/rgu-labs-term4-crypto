@@ -4,6 +4,7 @@ add_library(math STATIC
         solovay_strassen_prime_test.cpp
         miller_rabin_prime_test.cpp
         prime_test.cpp
+        continued_fraction.cpp
 )
 
 

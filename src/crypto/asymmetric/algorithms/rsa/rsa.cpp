@@ -52,9 +52,6 @@ namespace crypto::rsa {
       throw std::logic_error("Rsa::decrypt: no private key");
     }
     const mpz_class c = bytes_to_mpz(ciphertext);
-    if (c >= m_private_key->n) {
-      throw std::invalid_argument("Rsa::decrypt: ciphertext too large for key size");
-    }
     const mpz_class m = math::powm(c, m_private_key->d, m_private_key->n);
     const size_t n_bytes = (mpz_sizeinbase(m_private_key->n.get_mpz_t(), 2) + 7) / 8;
     return mpz_to_bytes(m, n_bytes);

@@ -1,5 +1,7 @@
 add_library(rsa_vulnerabilities STATIC
         vulnerable_key_generator.cpp
+        fermat_attack.cpp
+        wiener_attack.cpp
 )
 
 
