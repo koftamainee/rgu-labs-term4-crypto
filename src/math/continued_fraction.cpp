@@ -86,7 +86,7 @@ std::vector<int> stern_brocot_path(const mpz_class &a, const mpz_class &b) {
   if (a <= 0 || b <= 0) {
     throw std::invalid_argument("stern_brocot_path: a and b must be positive");
   }
-  if (gcd(a, b) != 1) {
+  if (math::gcd(a, b) != 1) {
     throw std::invalid_argument("stern_brocot_path: a and b must be coprime");
   }
   std::vector<int> path;
