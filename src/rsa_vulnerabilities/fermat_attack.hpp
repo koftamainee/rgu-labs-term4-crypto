@@ -2,7 +2,6 @@
 #define RGU_LABS_TERM4_CRYPTO_FERMAT_ATTACK_HPP
 
 #include <gmpxx.h>
-#include <stdint.h>
 
 namespace crypto::rsa {
 struct FermatAttackResult {
