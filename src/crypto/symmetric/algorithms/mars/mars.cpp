@@ -108,7 +108,7 @@ namespace crypto::mars {
     0xdf0d4164, 0x19af70ee
   };
 
-uint32_t MARS::rol32(uint32_t x, int n) {
+  uint32_t MARS::rol32(uint32_t x, int n) {
     return (x << n) | (x >> (32 - n));
   }
 
@@ -116,7 +116,6 @@ uint32_t MARS::rol32(uint32_t x, int n) {
     return (x >> n) | (x << (32 - n));
   }
 
-  MARS::MARS() {}
 
   void MARS::key_schedule(const Bytes& key) {
     size_t key_len = key.size();
@@ -138,7 +137,7 @@ uint32_t MARS::rol32(uint32_t x, int n) {
       T[i] = 0;
     }
 
-    static const uint32_t B[4] = {0xa4a8d57b, 0x5b5d193b, 0xc8a8309b, 0x73f9a978};
+    static constexpr uint32_t B[4] = {0xa4a8d57b, 0x5b5d193b, 0xc8a8309b, 0x73f9a978};
 
     for (int j = 0; j < 4; j++) {
       for (int i = 0; i < 15; i++) {
@@ -161,11 +160,15 @@ uint32_t MARS::rol32(uint32_t x, int n) {
       uint32_t M = 0;
       for (int bit = 2; bit <= 30; bit++) {
         int run_val = (int)((w >> bit) & 1);
-        int len = 1;
-        int lo = bit - 1;
-        while (lo >= 0 && (int)((w >> lo) & 1) == run_val) { len++; lo--; }
-        int hi = bit + 1;
-        while (hi <= 31 && (int)((w >> hi) & 1) == run_val) { len++; hi++; }
+        int len = 1, lo = bit - 1, hi = bit + 1;
+        while (lo >= 0 && (int)((w >> lo) & 1) == run_val) {
+          len++;
+          lo--;
+        }
+        while (hi <= 31 && (int)((w >> hi) & 1) == run_val) {
+          len++;
+          hi++;
+        }
         if (len >= 10) {
           int prev = (int)((w >> (bit - 1)) & 1);
           int curr = (int)((w >> bit) & 1);
@@ -187,12 +190,12 @@ uint32_t MARS::rol32(uint32_t x, int n) {
     R = rol32(A, 13) * Koi;
     M = A + Kei;
     R = rol32(R, 5);
-    M = rol32(M, (R >> 5) & 31);
+    M = rol32(M, (int)(R >> 5) & 31);
     L = SBOX[M & 0x1FF];
     L ^= (R >> 5);
     L ^= R;
     R = rol32(R, 5);
-    L = rol32(L, R & 31);
+    L = rol32(L, (int)R & 31);
   }
 
   void MARS::forward_mix(uint32_t& A, uint32_t& B, uint32_t& C, uint32_t& D,
@@ -203,10 +206,10 @@ uint32_t MARS::rol32(uint32_t x, int n) {
     D += K[3];
 
     for (int i = 0; i < 8; i++) {
-      uint8_t b0 = (uint8_t)(A);
-      uint8_t b1 = (uint8_t)(A >> 8);
-      uint8_t b2 = (uint8_t)(A >> 16);
-      uint8_t b3 = (uint8_t)(A >> 24);
+      auto b0 = (uint8_t)(A);
+      auto b1 = (uint8_t)(A >> 8);
+      auto b2 = (uint8_t)(A >> 16);
+      auto b3 = (uint8_t)(A >> 24);
 
       B = (B ^ SBOX[b0]) + SBOX[256 + b1];
       C = C + SBOX[b2];
@@ -215,7 +218,8 @@ uint32_t MARS::rol32(uint32_t x, int n) {
       A = ror32(A, 24);
       if (i == 0 || i == 4) {
         A += D;
-      } else if (i == 1 || i == 5) {
+      }
+      else if (i == 1 || i == 5) {
         A += B;
       }
 
@@ -232,7 +236,8 @@ uint32_t MARS::rol32(uint32_t x, int n) {
     for (int i = 0; i < 8; i++) {
       if (i == 2 || i == 6) {
         A -= D;
-      } else if (i == 3 || i == 7) {
+      }
+      else if (i == 3 || i == 7) {
         A -= B;
       }
 
@@ -263,7 +268,8 @@ uint32_t MARS::rol32(uint32_t x, int n) {
         B += L;
         C += M;
         D ^= R;
-      } else {
+      }
+      else {
         B ^= R;
         C += M;
         D += L;
@@ -293,7 +299,8 @@ uint32_t MARS::rol32(uint32_t x, int n) {
         B -= L;
         C -= M;
         D ^= R;
-      } else {
+      }
+      else {
         B ^= R;
         C -= M;
         D -= L;
@@ -314,20 +321,36 @@ uint32_t MARS::rol32(uint32_t x, int n) {
       throw std::invalid_argument("MARS: block must be 16 bytes");
     }
 
-    uint32_t A = (uint32_t)block[0]  | ((uint32_t)block[1]  << 8) | ((uint32_t)block[2]  << 16) | ((uint32_t)block[3]  << 24);
-    uint32_t B = (uint32_t)block[4]  | ((uint32_t)block[5]  << 8) | ((uint32_t)block[6]  << 16) | ((uint32_t)block[7]  << 24);
-    uint32_t C = (uint32_t)block[8]  | ((uint32_t)block[9]  << 8) | ((uint32_t)block[10] << 16) | ((uint32_t)block[11] << 24);
-    uint32_t D = (uint32_t)block[12] | ((uint32_t)block[13] << 8) | ((uint32_t)block[14] << 16) | ((uint32_t)block[15] << 24);
+    uint32_t A = (uint32_t)block[0] | ((uint32_t)block[1] << 8) | ((uint32_t)block[2] << 16) | ((uint32_t)block[3] <<
+      24);
+    uint32_t B = (uint32_t)block[4] | ((uint32_t)block[5] << 8) | ((uint32_t)block[6] << 16) | ((uint32_t)block[7] <<
+      24);
+    uint32_t C = (uint32_t)block[8] | ((uint32_t)block[9] << 8) | ((uint32_t)block[10] << 16) | ((uint32_t)block[11] <<
+      24);
+    uint32_t D = (uint32_t)block[12] | ((uint32_t)block[13] << 8) | ((uint32_t)block[14] << 16) | ((uint32_t)block[15]
+      << 24);
 
     forward_mix(A, B, C, D, m_K);
     core_encrypt(A, B, C, D, m_K);
     backwards_mix(A, B, C, D, m_K);
 
     Bytes result(16);
-    result[0]  = (uint8_t)(A);        result[1]  = (uint8_t)(A >> 8);  result[2]  = (uint8_t)(A >> 16); result[3]  = (uint8_t)(A >> 24);
-    result[4]  = (uint8_t)(B);        result[5]  = (uint8_t)(B >> 8);  result[6]  = (uint8_t)(B >> 16); result[7]  = (uint8_t)(B >> 24);
-    result[8]  = (uint8_t)(C);        result[9]  = (uint8_t)(C >> 8);  result[10] = (uint8_t)(C >> 16); result[11] = (uint8_t)(C >> 24);
-    result[12] = (uint8_t)(D);        result[13] = (uint8_t)(D >> 8);  result[14] = (uint8_t)(D >> 16); result[15] = (uint8_t)(D >> 24);
+    result[0] = (uint8_t)(A);
+    result[1] = (uint8_t)(A >> 8);
+    result[2] = (uint8_t)(A >> 16);
+    result[3] = (uint8_t)(A >> 24);
+    result[4] = (uint8_t)(B);
+    result[5] = (uint8_t)(B >> 8);
+    result[6] = (uint8_t)(B >> 16);
+    result[7] = (uint8_t)(B >> 24);
+    result[8] = (uint8_t)(C);
+    result[9] = (uint8_t)(C >> 8);
+    result[10] = (uint8_t)(C >> 16);
+    result[11] = (uint8_t)(C >> 24);
+    result[12] = (uint8_t)(D);
+    result[13] = (uint8_t)(D >> 8);
+    result[14] = (uint8_t)(D >> 16);
+    result[15] = (uint8_t)(D >> 24);
     return result;
   }
 
@@ -336,10 +359,14 @@ uint32_t MARS::rol32(uint32_t x, int n) {
       throw std::invalid_argument("MARS: block must be 16 bytes");
     }
 
-    uint32_t A = (uint32_t)block[0]  | ((uint32_t)block[1]  << 8) | ((uint32_t)block[2]  << 16) | ((uint32_t)block[3]  << 24);
-    uint32_t B = (uint32_t)block[4]  | ((uint32_t)block[5]  << 8) | ((uint32_t)block[6]  << 16) | ((uint32_t)block[7]  << 24);
-    uint32_t C = (uint32_t)block[8]  | ((uint32_t)block[9]  << 8) | ((uint32_t)block[10] << 16) | ((uint32_t)block[11] << 24);
-    uint32_t D = (uint32_t)block[12] | ((uint32_t)block[13] << 8) | ((uint32_t)block[14] << 16) | ((uint32_t)block[15] << 24);
+    uint32_t A = (uint32_t)block[0] | ((uint32_t)block[1] << 8) | ((uint32_t)block[2] << 16) | ((uint32_t)block[3] <<
+      24);
+    uint32_t B = (uint32_t)block[4] | ((uint32_t)block[5] << 8) | ((uint32_t)block[6] << 16) | ((uint32_t)block[7] <<
+      24);
+    uint32_t C = (uint32_t)block[8] | ((uint32_t)block[9] << 8) | ((uint32_t)block[10] << 16) | ((uint32_t)block[11] <<
+      24);
+    uint32_t D = (uint32_t)block[12] | ((uint32_t)block[13] << 8) | ((uint32_t)block[14] << 16) | ((uint32_t)block[15]
+      << 24);
 
     A += m_K[36];
     B += m_K[37];
@@ -359,7 +386,8 @@ uint32_t MARS::rol32(uint32_t x, int n) {
 
       if (i == 2 || i == 6) {
         A += D;
-      } else if (i == 3 || i == 7) {
+      }
+      else if (i == 3 || i == 7) {
         A += B;
       }
     }
@@ -367,22 +395,25 @@ uint32_t MARS::rol32(uint32_t x, int n) {
     core_decrypt(A, B, C, D, m_K);
 
     for (int i = 7; i >= 0; i--) {
-      uint32_t tmp = ror32(D, 24);
+      uint32_t tmp = D;
       D = C;
       C = B;
       B = A;
       A = tmp;
 
-      uint8_t b0 = (uint8_t)(A);
-      uint8_t b1 = (uint8_t)(A >> 8);
-      uint8_t b2 = (uint8_t)(A >> 16);
-      uint8_t b3 = (uint8_t)(A >> 24);
-
       if (i == 0 || i == 4) {
         A -= D;
-      } else if (i == 1 || i == 5) {
+      }
+      else if (i == 1 || i == 5) {
         A -= B;
       }
+
+      A = rol32(A, 24);
+
+      auto b0 = (uint8_t)(A);
+      auto b1 = (uint8_t)(A >> 8);
+      auto b2 = (uint8_t)(A >> 16);
+      auto b3 = (uint8_t)(A >> 24);
 
       D = D ^ SBOX[256 + b3];
       C = C - SBOX[b2];
@@ -395,10 +426,22 @@ uint32_t MARS::rol32(uint32_t x, int n) {
     D -= m_K[3];
 
     Bytes result(16);
-    result[0]  = (uint8_t)(A);        result[1]  = (uint8_t)(A >> 8);  result[2]  = (uint8_t)(A >> 16); result[3]  = (uint8_t)(A >> 24);
-    result[4]  = (uint8_t)(B);        result[5]  = (uint8_t)(B >> 8);  result[6]  = (uint8_t)(B >> 16); result[7]  = (uint8_t)(B >> 24);
-    result[8]  = (uint8_t)(C);        result[9]  = (uint8_t)(C >> 8);  result[10] = (uint8_t)(C >> 16); result[11] = (uint8_t)(C >> 24);
-    result[12] = (uint8_t)(D);        result[13] = (uint8_t)(D >> 8);  result[14] = (uint8_t)(D >> 16); result[15] = (uint8_t)(D >> 24);
+    result[0] = (uint8_t)(A);
+    result[1] = (uint8_t)(A >> 8);
+    result[2] = (uint8_t)(A >> 16);
+    result[3] = (uint8_t)(A >> 24);
+    result[4] = (uint8_t)(B);
+    result[5] = (uint8_t)(B >> 8);
+    result[6] = (uint8_t)(B >> 16);
+    result[7] = (uint8_t)(B >> 24);
+    result[8] = (uint8_t)(C);
+    result[9] = (uint8_t)(C >> 8);
+    result[10] = (uint8_t)(C >> 16);
+    result[11] = (uint8_t)(C >> 24);
+    result[12] = (uint8_t)(D);
+    result[13] = (uint8_t)(D >> 8);
+    result[14] = (uint8_t)(D >> 16);
+    result[15] = (uint8_t)(D >> 24);
     return result;
   }
 

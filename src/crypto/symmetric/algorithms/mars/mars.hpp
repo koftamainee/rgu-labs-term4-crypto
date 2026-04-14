@@ -9,7 +9,7 @@ namespace crypto::mars {
 
   class MARS final : public core::SymmetricCipher {
   public:
-    explicit MARS();
+    explicit MARS() = default;
 
     void set_encryption_key(const Bytes &key) override;
     void set_decryption_key(const Bytes &key) override;
@@ -23,7 +23,7 @@ namespace crypto::mars {
     static constexpr size_t BLOCK_SIZE = 16;
     static constexpr size_t KEY_WORDS = 40;
 
-    std::array<uint32_t, KEY_WORDS> m_K;
+    std::array<uint32_t, KEY_WORDS> m_K{};
 
     static const uint32_t SBOX[512];
 
