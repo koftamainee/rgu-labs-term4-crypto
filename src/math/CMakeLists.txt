@@ -5,6 +5,7 @@ add_library(math STATIC
         miller_rabin_prime_test.cpp
         prime_test.cpp
         continued_fraction.cpp
+        primitive_roots.cpp
 )
 
 

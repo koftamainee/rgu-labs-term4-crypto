@@ -15,6 +15,7 @@ add_library(crypto STATIC
         asymmetric/algorithms/rsa/key_serializer.cpp
         symmetric/algorithms/twofish/twofish.cpp
         symmetric/algorithms/mars/mars.cpp
+        asymmetric/algorithms/dh/dh.cpp
 )
 
 target_include_directories(crypto PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

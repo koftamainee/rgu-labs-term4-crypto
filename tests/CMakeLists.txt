@@ -28,6 +28,7 @@ add_crypto_test(test_math_fermat_prime              test_math_fermat_prime.cpp)
 add_crypto_test(test_math_miller_rabin_prime        test_math_miller_rabin_prime.cpp)
 add_crypto_test(test_math_solovay_strassen_prime    test_math_solovay_strassen_prime.cpp)
 add_crypto_test(test_math_continued_fraction        test_math_continued_fraction.cpp)
+add_crypto_test(test_math_primitive_roots           test_math_primitive_roots.cpp)
 
 add_crypto_test(test_crypto_bits_permute            test_crypto_bits_permute.cpp)
 add_crypto_test(test_crypto_bits_substitute         test_crypto_bits_substitute.cpp)
@@ -42,3 +43,4 @@ add_crypto_test(test_crypto_rsa_serializer          test_crypto_rsa_serializer.c
 add_crypto_test(test_rsa_vulnerabilities            test_rsa_vulnerabilities.cpp)
 add_crypto_test(test_crypto_twofish                 test_crypto_twofish.cpp)
 add_crypto_test(test_crypto_mars                    test_crypto_mars.cpp)
+add_crypto_test(test_crypto_dh                      test_crypto_dh.cpp)
